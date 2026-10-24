@@ -22,7 +22,7 @@ Dieses Dokument ist als Arbeitsgrundlage für Claude Code gedacht. Lege es als `
 | State | Zustand (nur für das aktive Workout), sonst Dexie `useLiveQuery` | Einfach, wenig Boilerplate. |
 | PWA | `vite-plugin-pwa` (Service Worker, Manifest, Icons) | Offline und installierbar. |
 | Hosting | **GitHub Pages** (statische Dateien, HTTPS, kostenlos) | Nötig, damit Safari die PWA installieren und den Service Worker aktivieren darf. Es liegt nur Code auf dem Server, deine Daten bleiben lokal auf dem Gerät. Details in Abschnitt 6a. |
-| Sync (optional, Phase 9) | Supabase (Postgres + Auth) | Geräteübergreifend, später TV-Steuerung per Handy. |
+| Geräte-Abgleich | **Kein Online-Sync.** Stattdessen Export der gesamten persönlichen Daten als Datei und Import auf einem anderen Gerät („Zusammenführen“ oder „Ersetzen“), siehe Einstellungen | Daten bleiben ausschließlich auf den eigenen Geräten, kein Konto und kein Server. Den Stand zwischen Geräten hält man bei Bedarf von Hand gleich. |
 | Native iOS (optional, Phase 11) | Capacitor um die gleiche Web-App | Nur falls PWA nicht reicht. Kostenloser Apple-ID-Build läuft 7 Tage, mit Developer-Account (99 $/Jahr) ein Jahr. |
 
 Hinweis zur PWA auf iOS: Ein Wake Lock (Display bleibt an) ist in Safari verfügbar, Push-Benachrichtigungen funktionieren nur für installierte PWAs, Background Sync gibt es nicht. Konsequenz für die App: Zeitanzeigen (z. B. die Workout-Dauer) müssen auf **Zeitstempeln** basieren (Endzeit speichern, bei Rückkehr neu berechnen), nicht auf `setInterval`. Außerdem regelmäßiger JSON-Export als Backup einbauen.
@@ -195,7 +195,7 @@ workout-app/
 `CLAUDE.md` (für Claude Code, sinngemäß):
 - Sprache der UI: Deutsch. Code und Kommentare: Englisch.
 - Mobile-first (Breite 390 px), große Touch-Ziele (min. 44 px), Dark Mode Standard.
-- Local-first: Alle Daten in Dexie, kein Backend nötig für Phasen 0–8.
+- Local-first: Alle Daten in Dexie, kein Backend und kein Online-Sync (bewusst).
 - Modellwechsel-Stopp: Vor jeder Phase bzw. Teilaufgabe laut Abschnitt 7a anhalten, das empfohlene Modell nennen und per Rückfrage warten, bis ich mit `/model` umgestellt und bestätigt habe. Nie ohne diese Bestätigung mit der Phase beginnen.
 - Hosting auf GitHub Pages: `base` und Manifest-Scope auf den Repo-Pfad, `HashRouter`, Assets nur über `import.meta.env.BASE_URL`. Keine persönlichen Daten ins Repo committen.
 - Statistiken immer aus Sätzen berechnen, nie doppelt speichern.
@@ -269,11 +269,11 @@ Profildaten, Gewicht eintragen/bearbeiten, Zielgewicht, Workouts/Woche-Ziel, Gew
 **Phase 8 – PWA-Feinschliff**
 Offline-Test (Flugmodus), Install-Hinweis für iOS (Share → Zum Home-Bildschirm), Icons, Splash, Safe-Area-Insets (Notch/Home-Bar), automatische Backup-Erinnerung. Prüfen, dass die Installation von der GitHub-Pages-URL funktioniert (Safari → Teilen → "Zum Home-Bildschirm"), die App im Vollbild ohne Safari-Leiste startet und nach dem Installieren im Flugmodus läuft. Update-Verhalten testen: neue Version deployen, App neu öffnen, Versionsnummer prüfen.
 
-**Phase 9 – Sync (optional)**
-Supabase-Projekt, Auth (E-Mail-Link), Tabellen spiegeln das Dexie-Schema, Row-Level-Security, einfacher Sync (Last-write-wins mit `updatedAt`). Wird nur gebraucht, wenn du mehrere Geräte parallel nutzen oder das Handy als Fernbedienung für den TV nutzen willst.
+**Phase 9 – Sync: gestrichen**
+Bewusste Entscheidung gegen Online-Speicherung. Ersatz (bereits umgesetzt): Export/Import aller persönlichen Daten in den Einstellungen mit „Zusammenführen“ und „Ersetzen“, Teilen-Menü auf dem iPhone (AirDrop, „In Dateien sichern“).
 
 **Phase 10 – TV-/Heimtraining-Modus (optional)**
-Eigene Route `/tv` mit großer Typografie und hohem Kontrast: eine Übung nach der anderen, große Animation, Satz- und Pausen-Countdown, Weiter/Zurück per Fernbedienung (Pfeiltasten/Enter, sichtbarer Fokus). Anzeigewege: Browser des TV, AirPlay (Apple TV) oder Chromecast/Tab-Spiegelung vom Handy. Mit Phase 9 kann das Handy als Eingabegerät dienen und der TV zeigt nur an.
+Eigene Route `/tv` mit großer Typografie und hohem Kontrast: eine Übung nach der anderen, große Animation, Satz- und Pausen-Countdown, Weiter/Zurück per Fernbedienung (Pfeiltasten/Enter, sichtbarer Fokus). Anzeigewege: Browser des TV, AirPlay (Apple TV) oder Chromecast/Tab-Spiegelung vom Handy. Da es keinen Sync gibt, läuft der TV-Modus eigenständig im Browser des TV (oder gespiegelt vom Handy).
 
 **Phase 11 – Native iOS (optional)**
 Nur wenn PWA nicht reicht (z. B. Apple Health, Haptik). Capacitor um den Web-Build, Xcode, Signatur mit Apple-ID (7 Tage) oder Developer-Account (1 Jahr, TestFlight).
@@ -300,7 +300,7 @@ Aktuell verfügbar: **Haiku 5.5** (schnell, günstig), **Sonnet 5.5** (Standard 
 | 6/7 – Diagramme (Recharts) | **Sonnet 5.5** | Standard-Charts. |
 | 7 – Profil und Ziele | **Sonnet 5.5** | Formulare, Diagramme. |
 | 8 – PWA-Feinschliff, Offline-Test, Safe-Areas | **Sonnet 5.5**, bei iOS-Eigenheiten **Opus 5.5** | Service-Worker-Caching und Update-Verhalten sind fehleranfällig. |
-| 9 – Sync mit Supabase (optional) | **Opus 5.5** | Konfliktbehandlung, Row-Level-Security und Auth sind sicherheits- und datenkritisch. |
+| 9 – Sync | – | Gestrichen, ersetzt durch Export/Import. |
 | 10 – TV-Modus (optional) | **Sonnet 5.5** | UI mit Fokus-Navigation. Bei Fernbedienungsproblemen Opus. |
 | 11 – Capacitor / native iOS (optional) | **Opus 5.5** | Xcode-Signatur und Build-Probleme sind schwer zu debuggen. |
 | Architektur-Review vor Phase 3 und nach Phase 7 | **Opus 5.5**, optional **Fable 5.1** | Einmal das ganze Projekt gegen PLAN.md prüfen lassen. Fable lohnt sich nur, wenn Opus an etwas hängt. |
@@ -354,7 +354,7 @@ prüfe, dass jeder Muskelname im Seed ein Mapping hat.
 
 ## 9. Risiken und offene Punkte
 
-- **Datenverlust in iOS:** Installierte PWAs sind weniger gefährdet als Safari-Tabs, aber ein Backup-Export bleibt Pflicht. Phase 9 löst das dauerhaft.
+- **Datenverlust in iOS:** Installierte PWAs sind weniger gefährdet als Safari-Tabs, aber ein Backup-Export bleibt Pflicht (kein Online-Sync, siehe Phase 9). Die App fordert dauerhaften Speicher an; Phase 8 ergänzt eine Backup-Erinnerung.
 - **Animationen:** Überblendete Standbilder sind einfacher als die Videos von Strong. Besseres Material müsstest du lizenzieren oder selbst erzeugen.
 - **Übersetzung:** Die Anleitungen sind im Seed englisch, Deutsch erfordert einen Übersetzungsschritt.
 - **Muskelnamen-Mapping:** Der Aufwand für saubere SVG-Silhouetten wird gern unterschätzt. Plane dafür eine eigene Iteration ein.
