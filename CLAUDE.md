@@ -7,7 +7,8 @@ Private Strong-style workout tracker (PWA). Full spec: see PLAN.md.
 - Exercise images: not precached. Precache only app shell + seed JSON; images via Workbox runtime caching (CacheFirst).
 
 ## Rules
-- UI language: German. Code and comments: English.
+- UI language: German. Code and comments: English. Exercise names and instructions stay English on purpose (no translation); search understands German terms.
+- Scope is closed after Phase 8: no TV mode, no native iOS app, no online sync.
 - Mobile-first (390 px width), touch targets >= 44 px, dark mode default.
 - Responsive for every screen: phone = bottom nav + single column; `md` and up = side nav, wider content, multi-column lists/detail layouts; `2xl` (TV, large screens) = larger base font. Check new screens at 390 px and at desktop width.
 - Exercise library is a curated core list for regular gym and home training (`scripts/exercise-core.json`, ~200). Prefer too few over too many; the user creates missing ones as custom exercises. Change the list there, then run `npm run seed`.

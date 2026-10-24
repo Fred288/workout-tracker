@@ -13,7 +13,7 @@ Dieses Dokument ist als Arbeitsgrundlage für Claude Code gedacht. Lege es als `
 | Plattform | **PWA** (Web-App, über Safari "Zum Home-Bildschirm" installiert) | Läuft auf iPhone, Desktop und TV-Browser mit einer Codebasis. Kein Developer-Account, kein 7-Tage-Signatur-Ablauf. |
 | Frontend | Vite + React + TypeScript | Schnell, einfach, Claude Code kennt den Stack sehr gut. |
 | Styling | Tailwind CSS, Mobile-first, Dark Mode als Standard | Strong ist dunkel und minimalistisch. |
-| Responsive | Jeder Screen passt sich an: Handy (Navigation unten, eine Spalte), Tablet/PC (Seitenleiste, breiterer Inhalt, mehrspaltige Listen), TV/große Bildschirme (größere Schrift und Touch-Ziele) | App soll auch am PC oder Fernseher nutzbar sein, nicht nur als schmale Handy-Spalte. Der eigene TV-Modus (Phase 10) bleibt zusätzlich. |
+| Responsive | Jeder Screen passt sich an: Handy (Navigation unten, eine Spalte), Tablet/PC (Seitenleiste, breiterer Inhalt, mehrspaltige Listen), TV/große Bildschirme (größere Schrift und Touch-Ziele) | App soll auch am PC oder Fernseher nutzbar sein, nicht nur als schmale Handy-Spalte. Einen eigenen TV-Modus gibt es nicht (gestrichen), die normale Oberfläche skaliert. |
 | Übungskatalog | Kuratierte Kernliste (~200 Übungen) für normales Gym- und Heimtraining in `scripts/exercise-core.json`. Kein Strongman, keine Plyometrie, kein olympisches Gewichtheben, keine Spezialvarianten. Fehlendes legt man als eigene Übung an. | Lieber zu wenige Übungen als viele ungenutzte. Weniger Rauschen in Liste und Suche. |
 | Suche | Treffer plus "Ähnliche Übungen": deutsche Begriffe (z. B. "Bankdrücken"), Tippfehler-Toleranz, gleiche Muskelgruppe/Ausrüstung wie die Treffer | Man findet eine Übung auch, wenn man den genauen Namen nicht kennt, z. B. im laufenden Workout. |
 | Lokale Daten | **Dexie (IndexedDB)**, local-first | Funktioniert offline im Studio (oft schlechter Empfang). |
@@ -23,7 +23,7 @@ Dieses Dokument ist als Arbeitsgrundlage für Claude Code gedacht. Lege es als `
 | PWA | `vite-plugin-pwa` (Service Worker, Manifest, Icons) | Offline und installierbar. |
 | Hosting | **GitHub Pages** (statische Dateien, HTTPS, kostenlos) | Nötig, damit Safari die PWA installieren und den Service Worker aktivieren darf. Es liegt nur Code auf dem Server, deine Daten bleiben lokal auf dem Gerät. Details in Abschnitt 6a. |
 | Geräte-Abgleich | **Kein Online-Sync.** Stattdessen Export der gesamten persönlichen Daten als Datei und Import auf einem anderen Gerät („Zusammenführen“ oder „Ersetzen“), siehe Einstellungen | Daten bleiben ausschließlich auf den eigenen Geräten, kein Konto und kein Server. Den Stand zwischen Geräten hält man bei Bedarf von Hand gleich. |
-| Native iOS (optional, Phase 11) | Capacitor um die gleiche Web-App | Nur falls PWA nicht reicht. Kostenloser Apple-ID-Build läuft 7 Tage, mit Developer-Account (99 $/Jahr) ein Jahr. |
+| Native iOS | **Nicht geplant** (gestrichen). Die PWA bleibt die einzige Variante. | Kein Apple Health, keine Watch, dafür kein Developer-Account und keine Signatur. |
 
 Hinweis zur PWA auf iOS: Ein Wake Lock (Display bleibt an) ist in Safari verfügbar, Push-Benachrichtigungen funktionieren nur für installierte PWAs, Background Sync gibt es nicht. Konsequenz für die App: Zeitanzeigen (z. B. die Workout-Dauer) müssen auf **Zeitstempeln** basieren (Endzeit speichern, bei Rückkehr neu berechnen), nicht auf `setInterval`. Außerdem regelmäßiger JSON-Export als Backup einbauen.
 
@@ -109,7 +109,7 @@ interface Exercise {
   type: ExerciseType;
   primaryMuscles: string[];
   secondaryMuscles: string[];
-  instructions: string[];     // Deutsch, falls übersetzt
+  instructions: string[];     // Englisch (Übersetzung ist nicht geplant)
   images: string[];           // relative Pfade, 2 Frames
   level?: 'beginner' | 'intermediate' | 'expert';
   isCustom: boolean;
@@ -169,7 +169,7 @@ Hinweis: Die Bilder in free-exercise-db stammen aus einem älteren Datensatz, di
 
 **Muskel-Hervorhebung:** Eine Körper-Silhouette (Vorder- und Rückansicht) als SVG mit je einem Pfad pro Muskelgruppe. Primäre Muskeln kräftig einfärben (z. B. Akzentfarbe), sekundäre in hellerem Ton. Option: Bibliothek `react-body-highlighter` (npm, MIT) prüfen, ob die Muskelnamen zur Datenbank passen. Sonst eigene SVG bauen und ein Mapping-Objekt `muscleName → svgPathId` pflegen. Die Muskelnamen der Datenbank (Englisch, z. B. `quadriceps`, `lats`, `chest`) müssen auf dieses Mapping abgebildet werden.
 
-**Deutsche Anleitungen:** Beim Seed-Skript die englischen Anleitungen und Namen einmalig übersetzen (z. B. mit der Claude API oder von Hand für die wichtigsten 100 Übungen) und als `nameDe` / `instructions` im Seed-JSON ablegen. Die App zeigt Deutsch, fällt sonst auf Englisch zurück.
+**Sprache der Übungsdaten:** Namen und Anleitungen bleiben bewusst englisch, eine Übersetzung ist gestrichen. Die Suche versteht deutsche Begriffe (z. B. „Bankdrücken“), die Muskelgruppen, Ausrüstung und die Oberfläche sind deutsch. Die Felder `nameDe` und `instructionsDe` existieren im Datenmodell, werden aber nicht befüllt; eigene Übungen kann man auf Deutsch anlegen.
 
 ---
 
@@ -272,11 +272,11 @@ Offline-Test (Flugmodus), Install-Hinweis für iOS (Share → Zum Home-Bildschir
 **Phase 9 – Sync: gestrichen**
 Bewusste Entscheidung gegen Online-Speicherung. Ersatz (bereits umgesetzt): Export/Import aller persönlichen Daten in den Einstellungen mit „Zusammenführen“ und „Ersetzen“, Teilen-Menü auf dem iPhone (AirDrop, „In Dateien sichern“).
 
-**Phase 10 – TV-/Heimtraining-Modus (optional)**
-Eigene Route `/tv` mit großer Typografie und hohem Kontrast: eine Übung nach der anderen, große Animation, Satz- und Pausen-Countdown, Weiter/Zurück per Fernbedienung (Pfeiltasten/Enter, sichtbarer Fokus). Anzeigewege: Browser des TV, AirPlay (Apple TV) oder Chromecast/Tab-Spiegelung vom Handy. Da es keinen Sync gibt, läuft der TV-Modus eigenständig im Browser des TV (oder gespiegelt vom Handy).
+**Phase 10 – TV-Modus: gestrichen.** Die normale Oberfläche skaliert auf große Bildschirme (Seitenleiste, mehrspaltige Listen, größere Schrift ab 1536 px) und reicht für PC und Fernseher.
 
-**Phase 11 – Native iOS (optional)**
-Nur wenn PWA nicht reicht (z. B. Apple Health, Haptik). Capacitor um den Web-Build, Xcode, Signatur mit Apple-ID (7 Tage) oder Developer-Account (1 Jahr, TestFlight).
+**Phase 11 – Native iOS: gestrichen.** Die PWA bleibt die einzige Variante.
+
+**Mit Phase 8 ist der Plan abgeschlossen.** Weitere Wünsche (z. B. zusätzliche Körpermaße) kommen bei Bedarf als eigene kleine Aufgaben dazu.
 
 ---
 
@@ -290,7 +290,7 @@ Aktuell verfügbar: **Haiku 5.5** (schnell, günstig), **Sonnet 5.5** (Standard 
 |---|---|---|
 | 0 – Setup (Vite, Tailwind, PWA, GitHub Pages) | **Sonnet 5.5** | Standardaufgabe, viel Konfiguration. Wenn Manifest/Scope/Router auf dem iPhone Probleme machen, kurz **Opus 5.5** zum Debuggen. |
 | 1 – Datenbank und Seed-Skript | **Sonnet 5.5** | Schema und Mapping sind klar definiert. |
-| 1 – Übersetzung der Übungsnamen und Anleitungen ins Deutsche | **Haiku 5.5** (oder Sonnet bei Qualitätsproblemen) | Hohe Menge, einfache Aufgabe. Stichproben prüfen, vor allem Fachbegriffe. |
+| 1 – Übersetzung der Übungsnamen und Anleitungen ins Deutsche | – | Gestrichen. |
 | 2 – Übungsliste, Filter, Detailansicht, Überblend-Animation | **Sonnet 5.5** | Normale UI-Arbeit. |
 | 2 – Muskel-Silhouette (SVG + Mapping) | **Opus 5.5** | Kniffliger Teil: saubere Pfade, Mapping aller Muskelnamen, visuelle Prüfung. Mehrere Iterationen mit Screenshots einplanen. |
 | 3 – Aktives Workout (Zustand, Auto-Save, Timer, Wake Lock) | **Opus 5.5** | Zentrale Komponente mit vielen Randfällen (App wird im Hintergrund beendet, Timer per Zeitstempel, Datenverlust vermeiden). Hier lohnt sich das stärkere Modell. |
@@ -301,8 +301,8 @@ Aktuell verfügbar: **Haiku 5.5** (schnell, günstig), **Sonnet 5.5** (Standard 
 | 7 – Profil und Ziele | **Sonnet 5.5** | Formulare, Diagramme. |
 | 8 – PWA-Feinschliff, Offline-Test, Safe-Areas | **Sonnet 5.5**, bei iOS-Eigenheiten **Opus 5.5** | Service-Worker-Caching und Update-Verhalten sind fehleranfällig. |
 | 9 – Sync | – | Gestrichen, ersetzt durch Export/Import. |
-| 10 – TV-Modus (optional) | **Sonnet 5.5** | UI mit Fokus-Navigation. Bei Fernbedienungsproblemen Opus. |
-| 11 – Capacitor / native iOS (optional) | **Opus 5.5** | Xcode-Signatur und Build-Probleme sind schwer zu debuggen. |
+| 10 – TV-Modus | – | Gestrichen. |
+| 11 – Capacitor / native iOS | – | Gestrichen. |
 | Architektur-Review vor Phase 3 und nach Phase 7 | **Opus 5.5**, optional **Fable 5.1** | Einmal das ganze Projekt gegen PLAN.md prüfen lassen. Fable lohnt sich nur, wenn Opus an etwas hängt. |
 | Kleinkram (Umbenennen, Texte, Icons, Git-Commits) | **Haiku 5.5** | Schnell und günstig. |
 
@@ -356,7 +356,7 @@ prüfe, dass jeder Muskelname im Seed ein Mapping hat.
 
 - **Datenverlust in iOS:** Installierte PWAs sind weniger gefährdet als Safari-Tabs, aber ein Backup-Export bleibt Pflicht (kein Online-Sync, siehe Phase 9). Die App fordert dauerhaften Speicher an; Phase 8 ergänzt eine Backup-Erinnerung.
 - **Animationen:** Überblendete Standbilder sind einfacher als die Videos von Strong. Besseres Material müsstest du lizenzieren oder selbst erzeugen.
-- **Übersetzung:** Die Anleitungen sind im Seed englisch, Deutsch erfordert einen Übersetzungsschritt.
+- **Sprache:** Übungsnamen und Anleitungen bleiben englisch (bewusst, keine Übersetzung); die Suche versteht deutsche Begriffe.
 - **Muskelnamen-Mapping:** Der Aufwand für saubere SVG-Silhouetten wird gern unterschätzt. Plane dafür eine eigene Iteration ein.
 - **Kein Apple Health/Watch** in der PWA-Variante.
 - **GitHub Pages:** Unterpfad (`base`, Manifest-Scope) und Routing sind die typischen Stolperfallen. Die Seite ist öffentlich erreichbar, daher keine persönlichen Daten im Repo.
