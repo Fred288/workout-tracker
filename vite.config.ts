@@ -8,7 +8,13 @@ const BASE = '/workout-tracker/';
 
 export default defineConfig({
   base: BASE,
-  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    // Shown in the app so you can see which deploy is running (commit on CI, "dev" locally).
+    __APP_BUILD__: JSON.stringify(
+      `${process.env.GITHUB_SHA?.slice(0, 7) ?? 'dev'} · ${new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin', dateStyle: 'short', timeStyle: 'short' })}`,
+    ),
+  },
   plugins: [
     react(),
     tailwindcss(),

@@ -148,7 +148,9 @@ export default function Settings() {
         </p>
       </section>
 
-      <p className="mt-8 text-sm text-neutral-500">Version {__APP_VERSION__}</p>
+      <p className="mt-8 text-sm text-neutral-500">
+        Version {__APP_VERSION__} ({__APP_BUILD__})
+      </p>
     </>
   );
 }

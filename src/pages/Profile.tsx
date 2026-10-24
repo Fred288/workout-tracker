@@ -11,7 +11,9 @@ export default function Profile() {
       >
         Einstellungen und Backup
       </Link>
-      <p className="mt-4 text-sm text-neutral-500">Version {__APP_VERSION__}</p>
+      <p className="mt-4 text-sm text-neutral-500">
+        Version {__APP_VERSION__} ({__APP_BUILD__})
+      </p>
     </>
   );
 }
