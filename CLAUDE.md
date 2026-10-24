@@ -1,0 +1,18 @@
+# CLAUDE.md
+
+Private Strong-style workout tracker (PWA). Full spec: see PLAN.md.
+
+## Decisions
+- Hosting: GitHub Pages, repo variant A (project page), repo name `workout-tracker` -> `base: '/workout-tracker/'`, URL `https://<user>.github.io/workout-tracker/`.
+- Exercise images: not precached. Precache only app shell + seed JSON; images via Workbox runtime caching (CacheFirst).
+
+## Rules
+- UI language: German. Code and comments: English.
+- Mobile-first (390 px width), touch targets >= 44 px, dark mode default.
+- Local-first: all data in Dexie, no backend for phases 0-8.
+- Model-switch stop: before each phase / sub-task from PLAN.md section 7a, stop, name the recommended model and ask (AskUserQuestion: "Umgestellt, weiter" / "Mit aktuellem Modell weitermachen" / "Abbrechen"). Do not start without confirmation. At the end of each phase, name the recommended model for the next one.
+- GitHub Pages: `base` and manifest scope/start_url/id on the repo path, `HashRouter`, assets only via `import.meta.env.BASE_URL`. Never commit personal data (`*.backup.json` in .gitignore).
+- Stats are always computed from sets, never stored twice.
+- Timers use timestamps (end time), never counting intervals.
+- Every stats function gets vitest unit tests.
+- Do not copy Strong assets, logos or texts.
