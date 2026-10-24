@@ -81,7 +81,7 @@ const res = await fetch(`${SOURCE}/dist/exercises.json`);
 if (!res.ok) throw new Error(`exercises.json: HTTP ${res.status}`);
 const raw = (await res.json()) as RawExercise[];
 
-const exercises: Exercise[] = raw.map((r) => {
+let exercises: Exercise[] = raw.map((r) => {
   const equipment = mapEquipment(r.equipment);
   return {
     id: r.id,
@@ -146,6 +146,36 @@ for (const [num, names] of Object.entries(ekMap)) {
     e.illustrations = frames;
   }
 }
+// Keep the library focused on regular gym and home training, see scripts/exercise-exclusions.json.
+const ex = JSON.parse(await readFile('scripts/exercise-exclusions.json', 'utf8')) as {
+  categories: string[];
+  names: string[];
+  patterns: string[];
+  keep: string[];
+  recategorize: Record<string, string>;
+};
+const patterns = ex.patterns.map((p) => new RegExp(p, 'i'));
+for (const n of [...ex.names, ...ex.keep]) {
+  if (!byName.has(n)) throw new Error(`exercise-exclusions: unknown exercise "${n}"`);
+}
+const excluded = (e: Exercise) =>
+  !ex.keep.includes(e.name) &&
+  ((e.category !== undefined && ex.categories.includes(e.category)) ||
+    ex.names.includes(e.name) ||
+    patterns.some((p) => p.test(e.name)));
+const before = exercises.length;
+exercises = exercises.filter((e) => !excluded(e));
+for (const [name, category] of Object.entries(ex.recategorize)) {
+  const e = byName.get(name);
+  if (!e) throw new Error(`exercise-exclusions: unknown exercise "${name}"`);
+  e.category = category;
+}
+const leftover = exercises.filter((e) => e.category && ex.categories.includes(e.category));
+if (leftover.length) {
+  throw new Error(`Kept exercises still in removed categories: ${leftover.map((e) => e.name).join(', ')}`);
+}
+console.log(`Excluded ${before - exercises.length} sport-specific exercises`);
+
 // Drop drawings that are no longer referenced (e.g. a pair removed from the map).
 const used = new Set(exercises.flatMap((e) => e.illustrations ?? []).map((p) => p.split('/').pop()));
 for (const f of await readdir(join('public', 'illustrations'))) {
@@ -157,6 +187,8 @@ console.log(`Illustrations: ${mapped.size} exercises`);
 const version = createHash('sha1').update(JSON.stringify(exercises)).digest('hex').slice(0, 10);
 await mkdir('src/data', { recursive: true });
 await writeFile('src/data/exercises.seed.json', JSON.stringify({ version, exercises }));
+// Tiny separate file so the app can check the version without loading the whole seed.
+await writeFile('src/data/exercises.seed.version.json', JSON.stringify({ version }) + '\n');
 console.log(`Wrote ${exercises.length} exercises (version ${version})`);
 
 if (!SKIP_IMAGES) {

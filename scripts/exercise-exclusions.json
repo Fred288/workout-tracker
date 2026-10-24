@@ -1,0 +1,55 @@
+{
+  "_comment": "Focus on regular gym and home training. Removes sport-specific exercises from the free-exercise-db seed. 'keep' wins over everything else.",
+  "categories": ["strongman", "plyometrics", "olympic weightlifting"],
+  "names": [
+    "Bench Press - Powerlifting",
+    "Deficit Deadlift",
+    "Hanging Bar Good Morning",
+    "Kneeling Squat",
+    "Speed Box Squat",
+    "Anti-Gravity Press",
+    "Kipping Muscle Up",
+    "Clean and Press",
+    "Power Clean",
+    "Dumbbell Clean",
+    "Alternating Hang Clean",
+    "Bottoms-Up Clean From The Hang Position",
+    "Smith Machine Hang Power Clean",
+    "Snatch Pull",
+    "Squat Jerk",
+    "Landmine 180's",
+    "Prowler Sprint",
+    "Skating"
+  ],
+  "patterns": [
+    "chains?\\b",
+    "^Reverse Band",
+    "Board Press",
+    "Pin Presses",
+    "off Pins",
+    "(Deadlift|Box Squat|Rack Pull) with Bands$",
+    "\\bSled\\b",
+    "Jammer",
+    "Kettlebell.*(Clean|Jerk|Snatch)"
+  ],
+  "keep": [
+    "Farmer's Walk",
+    "Push Press",
+    "Mountain Climbers",
+    "Star Jump",
+    "Front Box Jump",
+    "Split Jump",
+    "Squat with Bands",
+    "Hip Extension with Bands",
+    "Internal Rotation with Band"
+  ],
+  "_comment_recategorize": "Kept exercises from removed categories move to a remaining category, so the removed ones disappear from the filter.",
+  "recategorize": {
+    "Farmer's Walk": "strength",
+    "Push Press": "strength",
+    "Mountain Climbers": "cardio",
+    "Star Jump": "cardio",
+    "Front Box Jump": "cardio",
+    "Split Jump": "cardio"
+  }
+}

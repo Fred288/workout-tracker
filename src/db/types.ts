@@ -39,6 +39,7 @@ export interface WorkoutSet {
   reps?: number;
   weightKg?: number; // for bodyweight_reps = added weight
   durationSec?: number;
+  distanceM?: number; // for distance_duration
   rpe?: number;
   completed: boolean;
 }

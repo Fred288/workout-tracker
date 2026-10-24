@@ -13,6 +13,8 @@ Dieses Dokument ist als Arbeitsgrundlage für Claude Code gedacht. Lege es als `
 | Plattform | **PWA** (Web-App, über Safari "Zum Home-Bildschirm" installiert) | Läuft auf iPhone, Desktop und TV-Browser mit einer Codebasis. Kein Developer-Account, kein 7-Tage-Signatur-Ablauf. |
 | Frontend | Vite + React + TypeScript | Schnell, einfach, Claude Code kennt den Stack sehr gut. |
 | Styling | Tailwind CSS, Mobile-first, Dark Mode als Standard | Strong ist dunkel und minimalistisch. |
+| Responsive | Jeder Screen passt sich an: Handy (Navigation unten, eine Spalte), Tablet/PC (Seitenleiste, breiterer Inhalt, mehrspaltige Listen), TV/große Bildschirme (größere Schrift und Touch-Ziele) | App soll auch am PC oder Fernseher nutzbar sein, nicht nur als schmale Handy-Spalte. Der eigene TV-Modus (Phase 10) bleibt zusätzlich. |
+| Übungskatalog | Fokus auf normales Gym- und Heimtraining. Strongman, Plyometrie, olympisches Gewichtheben und Spezialvarianten (Ketten, Reverse-Bands, Sled, Kettlebell-Sport) werden beim Seed aussortiert (`scripts/exercise-exclusions.json`) | Weniger Rauschen in Liste und Suche. |
 | Lokale Daten | **Dexie (IndexedDB)**, local-first | Funktioniert offline im Studio (oft schlechter Empfang). |
 | Charts | Recharts | Linien- und Balkendiagramme für Gewicht, Workouts/Woche, Übungsverlauf. |
 | Routing | React Router | Tab-Navigation unten. |
