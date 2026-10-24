@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { saveWorkoutAsTemplate } from '../db/templates';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/dexie';
 import { displayName } from '../lib/exercises';
@@ -9,6 +11,7 @@ import { formatNumber, kgToUnit, useWeightUnit } from '../lib/units';
 export default function WorkoutSummary() {
   const { id = '' } = useParams();
   const unit = useWeightUnit();
+  const [saved, setSaved] = useState(false);
   const data = useLiveQuery(async () => {
     const w = await db.workouts.get(id);
     if (!w) return null;
@@ -74,6 +77,18 @@ export default function WorkoutSummary() {
         >
           Fertig
         </Link>
+        <button
+          className="min-h-12 rounded-lg border border-border bg-surface px-4 text-sm disabled:opacity-60"
+          disabled={saved}
+          onClick={async () => {
+            const name = prompt('Name der Vorlage', w.name);
+            if (name === null) return;
+            await saveWorkoutAsTemplate(w, name);
+            setSaved(true);
+          }}
+        >
+          {saved ? 'Vorlage gespeichert ✓' : 'Als Vorlage speichern'}
+        </button>
         <Link
           to={`/history/${w.id}`}
           replace

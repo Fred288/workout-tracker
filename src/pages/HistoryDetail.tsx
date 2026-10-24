@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/dexie';
 import { startWorkout, useActiveWorkout } from '../db/activeWorkout';
+import { saveWorkoutAsTemplate } from '../db/templates';
 import type { Workout } from '../db/types';
 import WorkoutExerciseCard from '../components/WorkoutExerciseCard';
 import { displayName } from '../lib/exercises';
@@ -29,6 +30,7 @@ export default function HistoryDetail() {
   const unit = useWeightUnit();
   const active = useActiveWorkout();
   const [editing, setEditing] = useState(false);
+  const [savedMsg, setSavedMsg] = useState<string | null>(null);
 
   const data = useLiveQuery(async () => {
     const workout = await db.workouts.get(id);
@@ -59,6 +61,13 @@ export default function HistoryDetail() {
     }
     await startWorkout(workoutFromPrevious(w, Date.now()));
     navigate('/workout/active');
+  }
+
+  async function onSaveTemplate() {
+    const name = prompt('Name der Vorlage', w.name);
+    if (name === null) return;
+    await saveWorkoutAsTemplate(w, name);
+    setSavedMsg('Vorlage gespeichert. Du findest sie unter Workout.');
   }
 
   async function onDelete() {
@@ -197,10 +206,14 @@ export default function HistoryDetail() {
         <button className={`${btn} bg-accent text-white`} onClick={() => void onRepeat()}>
           Workout wiederholen
         </button>
+        <button className={btn} onClick={() => void onSaveTemplate()}>
+          Als Vorlage speichern
+        </button>
         <button className={`${btn} text-red-400`} onClick={() => void onDelete()}>
           Löschen
         </button>
       </div>
+      {savedMsg && <p className="mt-2 text-sm text-accent">{savedMsg}</p>}
       {active && <p className="mt-2 text-xs text-neutral-500">Zum Wiederholen zuerst das laufende Workout beenden.</p>}
     </div>
   );

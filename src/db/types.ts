@@ -65,7 +65,7 @@ export interface Workout {
 }
 
 export interface TemplateExercise extends Omit<WorkoutExercise, 'sets'> {
-  sets: { type: SetType; reps?: number; weightKg?: number }[];
+  sets: { type: SetType; reps?: number; weightKg?: number; durationSec?: number; distanceM?: number }[];
 }
 
 export interface Template {

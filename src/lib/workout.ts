@@ -1,4 +1,4 @@
-import type { SetType, Workout, WorkoutExercise, WorkoutSet } from '../db/types';
+import type { SetType, Template, Workout, WorkoutExercise, WorkoutSet } from '../db/types';
 import { newId } from './id';
 
 // Pure, immutable operations on a workout. The active workout page applies them and
@@ -162,6 +162,52 @@ export function workoutFromPrevious(source: Workout, now: number): Workout {
         weightKg: s.weightKg,
         durationSec: s.durationSec,
         distanceM: s.distanceM,
+        completed: false,
+      })),
+    })),
+  };
+}
+
+/** Template from a workout: exercises, set types and values; notes and check marks are dropped. */
+export function templateFromWorkout(w: Workout, name: string): Template {
+  return {
+    id: newId(),
+    name: name.trim() || w.name,
+    exercises: w.exercises
+      .filter((e) => e.sets.length > 0)
+      .map((e, i) => ({
+        id: newId(),
+        exerciseId: e.exerciseId,
+        order: i,
+        supersetGroup: e.supersetGroup,
+        restSec: e.restSec,
+        sets: e.sets.map((s) => ({
+          type: s.type,
+          reps: s.reps,
+          weightKg: s.weightKg,
+          durationSec: s.durationSec,
+          distanceM: s.distanceM,
+        })),
+      })),
+  };
+}
+
+/** A fresh workout from a template with values prefilled and nothing checked off. */
+export function workoutFromTemplate(t: Template, now: number): Workout {
+  return {
+    id: newId(),
+    name: t.name,
+    startedAt: now,
+    templateId: t.id,
+    exercises: t.exercises.map((e, i) => ({
+      id: newId(),
+      exerciseId: e.exerciseId,
+      order: i,
+      supersetGroup: e.supersetGroup,
+      restSec: e.restSec,
+      sets: (e.sets.length ? e.sets : [{ type: 'normal' as const }]).map((s) => ({
+        id: newId(),
+        ...s,
         completed: false,
       })),
     })),
