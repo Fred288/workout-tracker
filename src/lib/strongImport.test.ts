@@ -205,17 +205,34 @@ describe('buildPlan', () => {
     expect(plan.already.measurements).toBe(1);
   });
 
-  it('warns about adjusted durations and absurd distances', () => {
+  it('leaves out a workout whose only set is a typo', () => {
     const w = parseStrongWorkouts(
       csv(WORKOUT_HEADER, row('2026-10-24 14:22:54', TZ, 'Lauf', 99999999, '', 'Laufband', 1, '', '', '', 900000, 300, '', '')),
     );
     const plan = buildPlan({ workouts: w }, library, none());
-    expect(plan.warnings).toHaveLength(2);
-    expect(plan.suspicious).toEqual(['24.10.2026 Lauf: Dauer 27778 Std. → 1 Std. gesetzt', '24.10.2026 Laufband, Satz 1: 900 km']);
+    expect(plan.warnings).toHaveLength(1);
+    // the only set is a typo, so the whole workout (and its exercise) is left out
+    expect(plan.suspicious).toEqual(['24.10.2026 Lauf: ganzes Workout ausgelassen, es blieb kein Satz übrig', '24.10.2026 Laufband, Satz 1: 900 km']);
+    expect(plan.workouts).toEqual([]);
+    expect(plan.newExercises).toEqual([]);
+  });
+
+  it('keeps normal sets of a workout and flags a bad duration', () => {
+    const w = parseStrongWorkouts(
+      csv(
+        WORKOUT_HEADER,
+        row('2026-10-24 14:22:54', TZ, 'Lauf', 99999999, '', 'Laufband', 1, '', '', '', 900, 300, '', ''),
+        row('2026-10-24 14:22:54', TZ, 'Lauf', 99999999, '', 'Laufband', 2, '', '', '', 900000, 300, '', ''),
+      ),
+    );
+    const plan = buildPlan({ workouts: w }, library, none());
+    expect(plan.workouts[0].exercises[0].sets).toHaveLength(1);
+    expect(plan.workouts[0].exercises[0].sets[0].distanceM).toBe(900);
+    expect(plan.suspicious).toEqual(['24.10.2026 Laufband, Satz 2: 900 km', '24.10.2026 Lauf: Dauer 27778 Std. → 1 Std. gesetzt']);
     expect(plan.newExercises[0]).toMatchObject({ type: 'distance_duration', category: 'cardio' });
   });
 
-  it('lists implausible reps and weights but keeps them unchanged', () => {
+  it('leaves out implausible reps and weights, keeps the rest of the workout', () => {
     const w = parseStrongWorkouts(
       csv(
         WORKOUT_HEADER,
@@ -226,7 +243,11 @@ describe('buildPlan', () => {
     );
     const plan = buildPlan({ workouts: w }, library, none());
     expect(plan.suspicious).toEqual(['24.10.2026 Leg Press, Satz 1: 102 Wdh.', '24.10.2026 Hip Adductor (Machine), Satz 1: 653 kg']);
-    expect(plan.workouts[0].exercises[0].sets[0].reps).toBe(102);
+    const ex = plan.workouts[0].exercises;
+    expect(ex).toHaveLength(1); // the adductor exercise had only the typo set
+    expect(ex[0].sets).toHaveLength(1);
+    expect(ex[0].sets[0]).toMatchObject({ reps: 10, weightKg: 100 });
+    expect(plan.newExercises).toEqual([]); // no custom exercise for something that was left out
     expect(plan.warnings).toHaveLength(1);
   });
 

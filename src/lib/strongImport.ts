@@ -205,7 +205,7 @@ export interface ImportPlan {
   /** Counts of entries that were already imported or present and are left alone. */
   already: { workouts: number; templates: number; measurements: number };
   warnings: string[];
-  /** Individual entries that look like typos in Strong (one line each), imported unchanged except durations. */
+  /** Entries left out or adjusted because they look like typos in Strong (one line each). */
   suspicious: string[];
   range?: { from: number; to: number };
 }
@@ -227,6 +227,14 @@ export function inferType(sets: RawSet[]): ExerciseType {
   return 'weight_reps';
 }
 
+/** Text for an implausible value, empty for a normal set. */
+export function oddValue(s: RawSet): string {
+  if ((s.reps ?? 0) > MAX_PLAUSIBLE_REPS) return `${s.reps} Wdh.`;
+  if ((s.weightKg ?? 0) > MAX_PLAUSIBLE_KG) return `${s.weightKg} kg`;
+  if ((s.distanceM ?? 0) > MAX_PLAUSIBLE_M) return `${s.distanceM! / 1000} km`;
+  return '';
+}
+
 const toSet = (s: RawSet, id: string): WorkoutSet => ({
   id,
   type: s.type,
@@ -243,9 +251,26 @@ export function buildPlan(
   library: Exercise[],
   existing: ExistingData,
 ): ImportPlan {
-  const workouts = input.workouts ?? [];
   const templates = input.templates ?? [];
   const warnings: string[] = [];
+
+  // Sets with implausible values (typos in Strong) are left out. Exercises or workouts that
+  // end up without sets disappear with them.
+  const cleaned = (input.workouts ?? []).map((w) => {
+    const omitted: string[] = [];
+    const exercises = w.exercises
+      .map((e) => ({
+        ...e,
+        sets: e.sets.filter((s, k) => {
+          const what = oddValue(s);
+          if (what) omitted.push(`${new Date(w.startedAt).toLocaleDateString('de-DE')} ${e.name}, Satz ${k + 1}: ${what}`);
+          return !what;
+        }),
+      }))
+      .filter((e) => e.sets.length > 0);
+    return { w: { ...w, exercises }, omitted };
+  });
+  const workouts = cleaned.map((c) => c.w);
 
   // --- exercises: collect usage per Strong name, then resolve once
   const usage = new Map<string, RawSet[]>();
@@ -286,10 +311,11 @@ export function buildPlan(
   const suspicious: string[] = [];
   const day = (ms: number) => new Date(ms).toLocaleDateString('de-DE');
   let adjusted = 0;
+  let omittedSets = 0;
   const planWorkouts: Workout[] = [];
   const idsSeen = new Set<string>();
   let alreadyWorkouts = 0;
-  for (const w of workouts) {
+  for (const { w, omitted } of cleaned) {
     let id = `strong-${w.startedAt}-${slug(w.name)}`;
     while (idsSeen.has(id)) id += '-b';
     idsSeen.add(id);
@@ -297,15 +323,17 @@ export function buildPlan(
       alreadyWorkouts++;
       continue;
     }
+    if (!w.exercises.length) {
+      suspicious.push(`${day(w.startedAt)} ${w.name}: ganzes Workout ausgelassen, es blieb kein Satz übrig`);
+      suspicious.push(...omitted);
+      omittedSets += omitted.length;
+      continue;
+    }
+    omittedSets += omitted.length;
+    suspicious.push(...omitted);
     if (w.durationAdjusted) {
       adjusted++;
       suspicious.push(`${day(w.startedAt)} ${w.name}: Dauer ${formatHours(w.rawDurationSec)} → 1 Std. gesetzt`);
-    }
-    for (const e of w.exercises) {
-      e.sets.forEach((s, k) => {
-        const what = (s.reps ?? 0) > MAX_PLAUSIBLE_REPS ? `${s.reps} Wdh.` : (s.weightKg ?? 0) > MAX_PLAUSIBLE_KG ? `${s.weightKg} kg` : (s.distanceM ?? 0) > MAX_PLAUSIBLE_M ? `${s.distanceM! / 1000} km` : '';
-        if (what) suspicious.push(`${day(w.startedAt)} ${e.name}, Satz ${k + 1}: ${what}`);
-      });
     }
     planWorkouts.push({
       id,
@@ -327,10 +355,9 @@ export function buildPlan(
       `${adjusted} Workouts hatten keine plausible Dauer (0 oder über 6 Stunden, vermutlich ein Fehler in Strong). Für sie wird 1 Stunde angesetzt.`,
     );
   }
-  const oddSets = suspicious.length - adjusted;
-  if (oddSets > 0) {
+  if (omittedSets > 0) {
     warnings.push(
-      `${oddSets} Sätze haben auffällig hohe Werte (über ${MAX_PLAUSIBLE_REPS} Wiederholungen, ${MAX_PLAUSIBLE_KG} kg oder ${MAX_PLAUSIBLE_M / 1000} km), vermutlich Tippfehler in Strong. Sie werden unverändert übernommen und verfälschen Rekorde, bis du sie im Verlauf korrigierst.`,
+      `${omittedSets} Sätze mit auffällig hohen Werten (über ${MAX_PLAUSIBLE_REPS} Wiederholungen, ${MAX_PLAUSIBLE_KG} kg oder ${MAX_PLAUSIBLE_M / 1000} km, vermutlich Tippfehler in Strong) werden nicht importiert.`,
     );
   }
 

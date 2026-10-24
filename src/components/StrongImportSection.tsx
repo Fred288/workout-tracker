@@ -138,14 +138,13 @@ export default function StrongImportSection() {
           {p.suspicious.length > 0 && (
             <details>
               <summary className="min-h-11 cursor-pointer py-2 text-accent">
-                Auffällige Einträge anzeigen ({p.suspicious.length})
+                Ausgelassene und angepasste Einträge anzeigen ({p.suspicious.length})
               </summary>
               <ul className="list-disc space-y-0.5 pl-5 text-neutral-300">
                 {p.suspicious.map((s) => (
                   <li key={s}>{s}</li>
                 ))}
               </ul>
-              <p className="mt-1 text-neutral-500">Korrigieren: Verlauf → Workout öffnen → Bearbeiten.</p>
             </details>
           )}
           {preview.unknownFiles.length > 0 && (

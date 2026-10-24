@@ -4,7 +4,10 @@ import { join } from 'node:path';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import seed from '../data/exercises.seed.json';
 import { db } from './dexie';
+import { writeFileSync } from 'node:fs';
 import { parseCsv } from '../lib/csv';
+import { MAX_PLAUSIBLE_KG, MAX_PLAUSIBLE_M, MAX_PLAUSIBLE_REPS } from '../lib/strongImport';
+import { createBackup } from './backup';
 import { applyStrongImport, previewStrongImport } from './strongImport';
 import type { Exercise } from './types';
 
@@ -65,6 +68,19 @@ describe('Strong CSV import', () => {
   });
 });
 
+// Writes a ready-made backup file (app format) from a real export, to move it to another device:
+// STRONG_DIR=<folder> STRONG_OUT=<file.json> npx vitest run src/db/strongImport.test.ts
+describe.skipIf(!process.env.STRONG_DIR || !process.env.STRONG_OUT)('backup file from a real Strong export', () => {
+  it('writes the file', async () => {
+    const dir = process.env.STRONG_DIR!;
+    const files = readdirSync(dir).filter((f) => /^strong_.*\.csv$/.test(f)).map((f) => csvFile(f, readFileSync(join(dir, f), 'utf8')));
+    await applyStrongImport((await previewStrongImport(files)).plan);
+    const backup = await createBackup();
+    writeFileSync(process.env.STRONG_OUT!, JSON.stringify(backup, null, 2));
+    expect(backup.data.workouts.length).toBeGreaterThan(300);
+  });
+});
+
 // Optional check against a real export: STRONG_DIR=<folder with the three strong_*.csv files> npx vitest run
 describe.skipIf(!process.env.STRONG_DIR)('real Strong export', () => {
   it('imports completely and consistently', async () => {
@@ -84,17 +100,21 @@ describe.skipIf(!process.env.STRONG_DIR)('real Strong export', () => {
     const csv = files.find((f) => f.name.includes('workouts'))!;
     const [header, ...body] = parseCsv(await csv.text());
     const col = (n: string) => header.indexOf(n);
-    const sum = (f: (r: string[]) => number) => body.reduce((s, r) => s + f(r), 0);
     const n = (r: string[], c: string) => Number(r[col(c)] || 0);
+    // rows the import deliberately leaves out: implausible values (typos in Strong)
+    const odd = (r: string[]) => n(r, 'Reps') > MAX_PLAUSIBLE_REPS || Math.abs(n(r, 'Weight (kg)')) > MAX_PLAUSIBLE_KG || n(r, 'Distance (m)') > MAX_PLAUSIBLE_M;
+    const kept = body.filter((r) => !odd(r));
+    expect(body.length - kept.length).toBe(p.plan.suspicious.filter((s) => /, Satz \d+:/.test(s)).length);
+    const sum = (f: (r: string[]) => number) => kept.reduce((s, r) => s + f(r), 0);
     const sets = workouts.flatMap((w) => w.exercises.flatMap((e) => e.sets));
-    expect(sets.length).toBe(body.length);
+    expect(sets.length).toBe(kept.length);
     expect(Math.round(sets.reduce((s, x) => s + (x.weightKg ?? 0) * (x.reps ?? 0), 0))).toBe(
       Math.round(sum((r) => Math.abs(n(r, 'Weight (kg)')) * n(r, 'Reps'))),
     );
     expect(sets.reduce((s, x) => s + (x.reps ?? 0), 0)).toBe(sum((r) => n(r, 'Reps')));
     expect(sets.reduce((s, x) => s + (x.distanceM ?? 0), 0)).toBe(sum((r) => n(r, 'Distance (m)')));
     expect(sets.reduce((s, x) => s + (x.durationSec ?? 0), 0)).toBe(sum((r) => n(r, 'Duration (s)')));
-    const label = (t: string) => body.filter((r) => r[col('Set')] === t).length;
+    const label = (t: string) => kept.filter((r) => r[col('Set')] === t).length;
     expect(sets.filter((x) => x.type === 'warmup').length).toBe(label('W'));
     expect(sets.filter((x) => x.type === 'drop').length).toBe(label('D'));
     expect(sets.filter((x) => x.type === 'failure').length).toBe(label('F'));
