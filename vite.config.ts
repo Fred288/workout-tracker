@@ -19,7 +19,8 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt': a new version waits until the app activates it (see src/lib/update.ts).
+      registerType: 'prompt',
       includeAssets: ['apple-touch-icon.png'],
       manifest: {
         id: BASE,
@@ -28,7 +29,7 @@ export default defineConfig({
         start_url: BASE,
         scope: BASE,
         display: 'standalone',
-        orientation: 'portrait',
+        orientation: 'any',
         background_color: '#0b0b0f',
         theme_color: '#0b0b0f',
         icons: [
@@ -40,7 +41,8 @@ export default defineConfig({
       workbox: {
         // App shell + seed JSON are precached; exercise images are not (see CLAUDE.md).
         globPatterns: ['**/*.{js,css,html,json,png,svg,ico,woff2}'],
-        globIgnores: ['**/exercises/**', '**/illustrations/**'],
+        // Splash images are only fetched by iOS at launch, never by the app itself.
+        globIgnores: ['**/exercises/**', '**/illustrations/**', '**/splash/**'],
         runtimeCaching: [
           {
             urlPattern: ({ url }) =>

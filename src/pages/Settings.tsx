@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import PageTitle from '../components/PageTitle';
+import OfflineSection from '../components/OfflineSection';
 import { db } from '../db/dexie';
 import { LAST_BACKUP_KEY, exportBackup, readBackupFile, restoreBackup, type RestoreMode } from '../db/backup';
 
@@ -105,6 +106,8 @@ export default function Settings() {
           </p>
         </details>
       </section>
+
+      <OfflineSection />
 
       <section className="mt-8 space-y-2 text-sm text-neutral-400">
         <h2 className="text-sm font-semibold uppercase">Quellen</h2>

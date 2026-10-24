@@ -266,7 +266,7 @@ Workout als Vorlage speichern, Vorlagenliste auf dem Start-Screen, Workout aus V
 **Phase 7 – Profil und Ziele**
 Profildaten, Gewicht eintragen/bearbeiten, Zielgewicht, Workouts/Woche-Ziel, Gewichtsdiagramm mit Ziellinie, Wochenbalken mit Ziellinie.
 
-**Phase 8 – PWA-Feinschliff**
+**Phase 8 – PWA-Feinschliff (umgesetzt)**
 Offline-Test (Flugmodus), Install-Hinweis für iOS (Share → Zum Home-Bildschirm), Icons, Splash, Safe-Area-Insets (Notch/Home-Bar), automatische Backup-Erinnerung. Prüfen, dass die Installation von der GitHub-Pages-URL funktioniert (Safari → Teilen → "Zum Home-Bildschirm"), die App im Vollbild ohne Safari-Leiste startet und nach dem Installieren im Flugmodus läuft. Update-Verhalten testen: neue Version deployen, App neu öffnen, Versionsnummer prüfen.
 
 **Phase 9 – Sync: gestrichen**

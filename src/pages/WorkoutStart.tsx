@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import PageTitle from '../components/PageTitle';
+import Reminders from '../components/Reminders';
 import { startWorkout, useActiveWorkout } from '../db/activeWorkout';
 import { db } from '../db/dexie';
 import { deleteTemplate, renameTemplate } from '../db/templates';
@@ -43,6 +44,7 @@ export default function WorkoutStart() {
   return (
     <div className="pb-6">
       <PageTitle>Workout</PageTitle>
+      <Reminders />
       {active === undefined ? null : active ? (
         <div className="rounded-xl border border-accent/40 bg-accent/10 p-4">
           <div className="text-sm text-neutral-400">Läuft seit {formatClock((now - active.startedAt) / 1000)}</div>

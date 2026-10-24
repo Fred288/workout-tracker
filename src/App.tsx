@@ -2,6 +2,7 @@ import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import BottomNav from './components/BottomNav';
 import SideNav from './components/SideNav';
 import ActiveWorkoutBanner from './components/ActiveWorkoutBanner';
+import UpdatePrompt from './components/UpdatePrompt';
 import Profile from './pages/Profile';
 import History from './pages/History';
 import HistoryDetail from './pages/HistoryDetail';
@@ -17,7 +18,7 @@ import Records from './pages/Records';
 export default function App() {
   return (
     <HashRouter>
-      <div className="flex h-full">
+      <div className="flex h-full pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
         <SideNav />
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="h-[env(safe-area-inset-top)] shrink-0 md:hidden" />
@@ -40,6 +41,7 @@ export default function App() {
               </Routes>
             </div>
           </main>
+          <UpdatePrompt />
           <ActiveWorkoutBanner />
           <BottomNav />
         </div>

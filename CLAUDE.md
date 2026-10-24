@@ -8,6 +8,8 @@ Private Strong-style workout tracker (PWA). Full spec: see PLAN.md.
 
 ## Rules
 - UI language: German. Code and comments: English. Exercise names and instructions stay English on purpose (no translation); search understands German terms.
+- App updates: service worker uses `registerType: 'prompt'`; a new version only activates via the banner (or at a cold start with no running workout). Never switch back to silent auto-reload.
+- Phase 8 is done (offline, install hint, backup reminder, update banner, splash screens, offline image download).
 - Scope is closed after Phase 8: no TV mode, no native iOS app, no online sync.
 - Mobile-first (390 px width), touch targets >= 44 px, dark mode default.
 - Responsive for every screen: phone = bottom nav + single column; `md` and up = side nav, wider content, multi-column lists/detail layouts; `2xl` (TV, large screens) = larger base font. Check new screens at 390 px and at desktop width.
