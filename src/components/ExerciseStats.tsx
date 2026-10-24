@@ -1,15 +1,17 @@
-import { useMemo } from 'react';
+import { Suspense, lazy, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/dexie';
 import type { Exercise } from '../db/types';
-import ExerciseCharts from './ExerciseCharts';
 import RecordBadges from './RecordBadges';
 import { formatSet } from '../lib/format';
 import { recordLabel, recordValueText } from '../lib/recordLabels';
 import { RECORD_KINDS, exerciseRecords, exerciseSessions, sessionSeries, workoutRecords } from '../lib/records';
 import { isCountingSet } from '../lib/stats';
 import { useWeightUnit } from '../lib/units';
+
+// Recharts is large, so it only loads when the charts tab is opened.
+const ExerciseCharts = lazy(() => import('./ExerciseCharts'));
 
 const longDate = (ms: number) =>
   new Date(ms).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
@@ -39,7 +41,13 @@ export default function ExerciseStats({ exercise, tab }: { exercise: Exercise; t
     );
   }
 
-  if (tab === 'Diagramme') return <ExerciseCharts series={stats.series} type={exercise.type} unit={unit} />;
+  if (tab === 'Diagramme') {
+    return (
+      <Suspense fallback={<p className="py-8 text-center text-sm text-neutral-500">Lade Diagramme …</p>}>
+        <ExerciseCharts series={stats.series} type={exercise.type} unit={unit} />
+      </Suspense>
+    );
+  }
 
   if (tab === 'Rekorde') {
     const kinds = RECORD_KINDS[exercise.type].filter((k) => stats.records[k]);
