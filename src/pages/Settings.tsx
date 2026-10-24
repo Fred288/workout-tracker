@@ -82,6 +82,21 @@ export default function Settings() {
           </a>
           , für den Dark Mode umgefärbt
         </p>
+        <p>
+          App-Icon: 💪 von{' '}
+          <a className="text-accent" href="https://github.com/jdecked/twemoji" target="_blank" rel="noreferrer">
+            Twemoji
+          </a>
+          ,{' '}
+          <a
+            className="text-accent"
+            href="https://creativecommons.org/licenses/by/4.0/deed.de"
+            target="_blank"
+            rel="noreferrer"
+          >
+            CC BY 4.0
+          </a>
+        </p>
       </section>
 
       <p className="mt-8 text-sm text-neutral-500">Version {__APP_VERSION__}</p>
