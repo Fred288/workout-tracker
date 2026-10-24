@@ -22,3 +22,4 @@ Private Strong-style workout tracker (PWA). Full spec: see PLAN.md.
 - No rest timer after completing a set (removed on request); don't reintroduce it.
 - Every stats function gets vitest unit tests.
 - Do not copy Strong assets, logos or texts.
+- Strong CSV import (Settings): table of known exercise names in src/lib/strongExercises.ts; only clear equivalents map to the library, everything else becomes a custom exercise. Import only adds, ids are deterministic (safe to repeat). Optional check against a real export: STRONG_DIR=<folder> npx vitest run src/db/strongImport.test.ts.

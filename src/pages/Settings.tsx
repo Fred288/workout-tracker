@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import PageTitle from '../components/PageTitle';
 import OfflineSection from '../components/OfflineSection';
+import StrongImportSection from '../components/StrongImportSection';
 import { db } from '../db/dexie';
 import { LAST_BACKUP_KEY, exportBackup, readBackupFile, restoreBackup, type RestoreMode } from '../db/backup';
 
@@ -106,6 +107,8 @@ export default function Settings() {
           </p>
         </details>
       </section>
+
+      <StrongImportSection />
 
       <OfflineSection />
 

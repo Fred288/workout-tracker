@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../db/dexie';
 import { allImageUrls, cacheAllImages, cacheSupported, countCached } from '../lib/offline';
 
 type Status = { total: number; cached: number } | null;
@@ -9,13 +11,15 @@ export default function OfflineSection() {
   const [progress, setProgress] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const refresh = async () => {
-    const urls = await allImageUrls();
-    setStatus({ total: urls.length, cached: await countCached(urls) });
-  };
+  // Recount when the library changes (e.g. right after the first start, before it is seeded).
+  const exerciseCount = useLiveQuery(() => db.exercises.count(), []);
   useEffect(() => {
-    if (cacheSupported()) void refresh();
-  }, []);
+    if (!cacheSupported() || !exerciseCount) return;
+    void (async () => {
+      const urls = await allImageUrls();
+      setStatus({ total: urls.length, cached: await countCached(urls) });
+    })();
+  }, [exerciseCount]);
 
   if (!cacheSupported()) return null;
 
@@ -33,7 +37,7 @@ export default function OfflineSection() {
     );
   }
 
-  const complete = status && status.cached >= status.total;
+  const complete = status && status.total > 0 && status.cached >= status.total;
   return (
     <section className="mt-8 max-w-xl space-y-2" aria-labelledby="offline-h">
       <h2 id="offline-h" className="text-sm font-semibold uppercase text-neutral-400">
