@@ -1,0 +1,83 @@
+{
+  "_comment": "Curated core library for regular gym and home training. Only these free-exercise-db exercises are seeded; anything else can be added as a custom exercise in the app.",
+  "names": [
+    "Crunches", "Sit-Up", "Reverse Crunch", "Cable Crunch", "Ab Crunch Machine", "Hanging Leg Raise",
+    "Flat Bench Lying Leg Raise", "Plank", "Side Bridge", "Russian Twist", "Dead Bug", "Ab Roller",
+    "Barbell Ab Rollout - On Knees", "Air Bike", "Oblique Crunches", "Decline Crunch", "Exercise Ball Crunch",
+    "Standing Cable Wood Chop", "Pallof Press", "Dumbbell Side Bend", "Knee/Hip Raise On Parallel Bars",
+
+    "Thigh Abductor", "Thigh Adductor", "Monster Walk",
+
+    "Barbell Curl", "EZ-Bar Curl", "Dumbbell Bicep Curl", "Dumbbell Alternate Bicep Curl", "Hammer Curls",
+    "Alternate Incline Dumbbell Curl", "Concentration Curls", "Preacher Curl", "Machine Preacher Curls",
+    "Standing Biceps Cable Curl", "Cable Hammer Curls - Rope Attachment", "Reverse Barbell Curl", "Spider Curl",
+    "Zottman Curl",
+
+    "Standing Calf Raises", "Seated Calf Raise", "Calf Press On The Leg Press Machine", "Standing Dumbbell Calf Raise",
+    "Donkey Calf Raises", "Smith Machine Calf Raise",
+
+    "Bicycling, Stationary", "Bicycling", "Elliptical Trainer", "Running, Treadmill", "Walking, Treadmill",
+    "Rowing, Stationary", "Rope Jumping", "Stairmaster", "Mountain Climbers", "Star Jump", "Front Box Jump",
+    "Split Jump",
+
+    "Barbell Bench Press - Medium Grip", "Barbell Incline Bench Press - Medium Grip", "Decline Barbell Bench Press",
+    "Dumbbell Bench Press", "Incline Dumbbell Press", "Dumbbell Flyes", "Incline Dumbbell Flyes", "Cable Crossover",
+    "Low Cable Crossover", "Butterfly", "Machine Bench Press", "Smith Machine Bench Press",
+    "Smith Machine Incline Bench Press", "Dips - Chest Version", "Pushups", "Push-Ups With Feet Elevated",
+    "Incline Push-Up", "Push-Up Wide", "Straight-Arm Dumbbell Pullover",
+
+    "Seated Palm-Up Barbell Wrist Curl", "Seated Palms-Down Barbell Wrist Curl", "Farmer's Walk", "Wrist Roller",
+
+    "Barbell Hip Thrust", "Barbell Glute Bridge", "Butt Lift (Bridge)", "Single Leg Glute Bridge", "Glute Kickback",
+    "One-Legged Cable Kickback", "Pull Through",
+
+    "Romanian Deadlift", "Stiff-Legged Dumbbell Deadlift", "Lying Leg Curls", "Seated Leg Curl", "Standing Leg Curl",
+    "Good Morning", "Glute Ham Raise", "Sumo Deadlift", "One-Arm Kettlebell Swings", "Kettlebell One-Legged Deadlift",
+    "Ball Leg Curl",
+
+    "Pullups", "Chin-Up", "Wide-Grip Lat Pulldown", "Close-Grip Front Lat Pulldown", "Underhand Cable Pulldowns",
+    "V-Bar Pulldown", "Straight-Arm Pulldown", "Band Assisted Pull-Up", "Weighted Pull Ups",
+
+    "Barbell Deadlift", "Hyperextensions (Back Extensions)", "Rack Pulls", "Superman",
+
+    "Bent Over Barbell Row", "Bent Over Two-Dumbbell Row", "One-Arm Dumbbell Row", "Seated Cable Rows",
+    "T-Bar Row with Handle", "Inverted Row", "Reverse Grip Bent-Over Rows", "Dumbbell Incline Row",
+    "Alternating Renegade Row",
+
+    "Barbell Squat", "Front Barbell Squat", "Goblet Squat", "Bodyweight Squat", "Dumbbell Squat", "Leg Press",
+    "Hack Squat", "Smith Machine Squat", "Leg Extensions", "Barbell Lunge", "Dumbbell Lunges", "Dumbbell Rear Lunge",
+    "Bodyweight Walking Lunge", "Barbell Walking Lunge", "Split Squat with Dumbbells", "Dumbbell Step Ups",
+    "Freehand Jump Squat", "Trap Bar Deadlift", "Plie Dumbbell Squat", "Squats - With Bands",
+
+    "Barbell Shoulder Press", "Standing Military Press", "Seated Barbell Military Press", "Dumbbell Shoulder Press",
+    "Seated Dumbbell Press", "Arnold Dumbbell Press", "Machine Shoulder (Military) Press",
+    "Smith Machine Overhead Shoulder Press", "Side Lateral Raise", "Front Dumbbell Raise", "Front Plate Raise",
+    "Reverse Flyes", "Reverse Machine Flyes", "Face Pull", "Cable Rear Delt Fly", "Upright Barbell Row", "Push Press",
+    "Handstand Push-Ups", "Band Pull Apart", "Lateral Raise - With Bands", "Shoulder Press - With Bands",
+    "External Rotation with Band", "Battling Ropes",
+
+    "Hamstring Stretch", "Quad Stretch", "Calf Stretch Hands Against Wall", "Child's Pose", "Cat Stretch",
+    "Kneeling Hip Flexor", "World's Greatest Stretch", "Chest And Front Of Shoulder Stretch", "Shoulder Stretch",
+    "Triceps Stretch", "Overhead Lat", "Upper Back Stretch", "Lying Glute", "Hug Knees To Chest", "Arm Circles",
+    "Standing Hip Circles", "Inchworm", "Side Neck Stretch", "Spinal Stretch", "Adductor/Groin",
+    "Standing Toe Touches", "Quadriceps-SMR", "Hamstring-SMR", "Iliotibial Tract-SMR", "Latissimus Dorsi-SMR",
+    "Calves-SMR",
+
+    "Barbell Shrug", "Dumbbell Shrug", "Standing Dumbbell Upright Row",
+
+    "Triceps Pushdown", "Triceps Pushdown - Rope Attachment", "Cable Rope Overhead Triceps Extension",
+    "EZ-Bar Skullcrusher", "Lying Triceps Press", "Close-Grip Barbell Bench Press", "Dips - Triceps Version",
+    "Bench Dips", "Dip Machine", "Tricep Dumbbell Kickback", "Standing Dumbbell Triceps Extension",
+    "Seated Triceps Press", "Dumbbell One-Arm Triceps Extension", "Machine Triceps Extension",
+    "Push-Ups - Close Triceps Position"
+  ],
+  "_comment_recategorize": "Kept exercises from dropped categories (strongman, plyometrics, olympic lifting) move to a remaining one.",
+  "recategorize": {
+    "Farmer's Walk": "strength",
+    "Push Press": "strength",
+    "Mountain Climbers": "cardio",
+    "Star Jump": "cardio",
+    "Front Box Jump": "cardio",
+    "Split Jump": "cardio"
+  }
+}

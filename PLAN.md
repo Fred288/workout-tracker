@@ -14,7 +14,8 @@ Dieses Dokument ist als Arbeitsgrundlage für Claude Code gedacht. Lege es als `
 | Frontend | Vite + React + TypeScript | Schnell, einfach, Claude Code kennt den Stack sehr gut. |
 | Styling | Tailwind CSS, Mobile-first, Dark Mode als Standard | Strong ist dunkel und minimalistisch. |
 | Responsive | Jeder Screen passt sich an: Handy (Navigation unten, eine Spalte), Tablet/PC (Seitenleiste, breiterer Inhalt, mehrspaltige Listen), TV/große Bildschirme (größere Schrift und Touch-Ziele) | App soll auch am PC oder Fernseher nutzbar sein, nicht nur als schmale Handy-Spalte. Der eigene TV-Modus (Phase 10) bleibt zusätzlich. |
-| Übungskatalog | Fokus auf normales Gym- und Heimtraining. Strongman, Plyometrie, olympisches Gewichtheben und Spezialvarianten (Ketten, Reverse-Bands, Sled, Kettlebell-Sport) werden beim Seed aussortiert (`scripts/exercise-exclusions.json`) | Weniger Rauschen in Liste und Suche. |
+| Übungskatalog | Kuratierte Kernliste (~200 Übungen) für normales Gym- und Heimtraining in `scripts/exercise-core.json`. Kein Strongman, keine Plyometrie, kein olympisches Gewichtheben, keine Spezialvarianten. Fehlendes legt man als eigene Übung an. | Lieber zu wenige Übungen als viele ungenutzte. Weniger Rauschen in Liste und Suche. |
+| Suche | Treffer plus "Ähnliche Übungen": deutsche Begriffe (z. B. "Bankdrücken"), Tippfehler-Toleranz, gleiche Muskelgruppe/Ausrüstung wie die Treffer | Man findet eine Übung auch, wenn man den genauen Namen nicht kennt, z. B. im laufenden Workout. |
 | Lokale Daten | **Dexie (IndexedDB)**, local-first | Funktioniert offline im Studio (oft schlechter Empfang). |
 | Charts | Recharts | Linien- und Balkendiagramme für Gewicht, Workouts/Woche, Übungsverlauf. |
 | Routing | React Router | Tab-Navigation unten. |

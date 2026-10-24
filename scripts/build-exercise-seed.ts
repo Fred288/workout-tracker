@@ -147,41 +147,34 @@ for (const [num, names] of Object.entries(ekMap)) {
   }
 }
 // Keep the library focused on regular gym and home training, see scripts/exercise-exclusions.json.
-const ex = JSON.parse(await readFile('scripts/exercise-exclusions.json', 'utf8')) as {
-  categories: string[];
+// Only the curated core library is seeded, see scripts/exercise-core.json.
+const core = JSON.parse(await readFile('scripts/exercise-core.json', 'utf8')) as {
   names: string[];
-  patterns: string[];
-  keep: string[];
   recategorize: Record<string, string>;
 };
-const patterns = ex.patterns.map((p) => new RegExp(p, 'i'));
-for (const n of [...ex.names, ...ex.keep]) {
-  if (!byName.has(n)) throw new Error(`exercise-exclusions: unknown exercise "${n}"`);
+const coreNames = new Set(core.names);
+for (const n of [...coreNames, ...Object.keys(core.recategorize)]) {
+  if (!byName.has(n)) throw new Error(`exercise-core: unknown exercise "${n}"`);
 }
-const excluded = (e: Exercise) =>
-  !ex.keep.includes(e.name) &&
-  ((e.category !== undefined && ex.categories.includes(e.category)) ||
-    ex.names.includes(e.name) ||
-    patterns.some((p) => p.test(e.name)));
-const before = exercises.length;
-exercises = exercises.filter((e) => !excluded(e));
-for (const [name, category] of Object.entries(ex.recategorize)) {
-  const e = byName.get(name);
-  if (!e) throw new Error(`exercise-exclusions: unknown exercise "${name}"`);
-  e.category = category;
-}
-const leftover = exercises.filter((e) => e.category && ex.categories.includes(e.category));
-if (leftover.length) {
-  throw new Error(`Kept exercises still in removed categories: ${leftover.map((e) => e.name).join(', ')}`);
-}
-console.log(`Excluded ${before - exercises.length} sport-specific exercises`);
+if (coreNames.size !== core.names.length) throw new Error('exercise-core: duplicate names');
+exercises = exercises.filter((e) => coreNames.has(e.name));
+for (const [name, category] of Object.entries(core.recategorize)) byName.get(name)!.category = category;
+const KEPT_CATEGORIES = ['strength', 'stretching', 'powerlifting', 'cardio'];
+const odd = exercises.filter((e) => e.category && !KEPT_CATEGORIES.includes(e.category));
+if (odd.length) throw new Error(`Recategorize these: ${odd.map((e) => e.name).join(', ')}`);
 
-// Drop drawings that are no longer referenced (e.g. a pair removed from the map).
-const used = new Set(exercises.flatMap((e) => e.illustrations ?? []).map((p) => p.split('/').pop()));
+// Drop drawings and photos that are no longer referenced.
+const usedDrawings = new Set(exercises.flatMap((e) => e.illustrations ?? []).map((p) => p.split('/').pop()));
 for (const f of await readdir(join('public', 'illustrations'))) {
-  if (!used.has(f)) await rm(join('public', 'illustrations', f));
+  if (!usedDrawings.has(f)) await rm(join('public', 'illustrations', f));
 }
-console.log(`Illustrations: ${mapped.size} exercises`);
+const usedPhotoDirs = new Set(exercises.flatMap((e) => e.images).map((p) => p.split('/')[0]));
+for (const d of await readdir(join('public', 'exercises')).catch(() => [])) {
+  if (!usedPhotoDirs.has(d)) await rm(join('public', 'exercises', d), { recursive: true });
+}
+console.log(
+  `Core library: ${exercises.length} exercises, ${exercises.filter((e) => e.illustrations).length} with drawings`,
+);
 
 // Version changes whenever the content changes, so existing installs re-import.
 const version = createHash('sha1').update(JSON.stringify(exercises)).digest('hex').slice(0, 10);

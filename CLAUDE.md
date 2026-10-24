@@ -10,7 +10,7 @@ Private Strong-style workout tracker (PWA). Full spec: see PLAN.md.
 - UI language: German. Code and comments: English.
 - Mobile-first (390 px width), touch targets >= 44 px, dark mode default.
 - Responsive for every screen: phone = bottom nav + single column; `md` and up = side nav, wider content, multi-column lists/detail layouts; `2xl` (TV, large screens) = larger base font. Check new screens at 390 px and at desktop width.
-- Exercise library is focused on regular gym and home training; adjust `scripts/exercise-exclusions.json` (not the app) to add or drop exercises.
+- Exercise library is a curated core list for regular gym and home training (`scripts/exercise-core.json`, ~200). Prefer too few over too many; the user creates missing ones as custom exercises. Change the list there, then run `npm run seed`.
 - Local-first: all data in Dexie, no backend for phases 0-8.
 - Model-switch stop: before each phase / sub-task from PLAN.md section 7a, stop, name the recommended model and ask (AskUserQuestion: "Umgestellt, weiter" / "Mit aktuellem Modell weitermachen" / "Abbrechen"). Do not start without confirmation. At the end of each phase, name the recommended model for the next one.
 - GitHub Pages: `base` and manifest scope/start_url/id on the repo path, `HashRouter`, assets only via `import.meta.env.BASE_URL`. Never commit personal data (`*.backup.json` in .gitignore).

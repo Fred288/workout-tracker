@@ -40,6 +40,14 @@ export default function ExerciseDetail() {
   ].filter((c): c is string => !!c);
 
   async function onDelete() {
+    let used = 0;
+    await db.workouts.each((w) => {
+      if (w.exercises.some((e) => e.exerciseId === id)) used++;
+    });
+    if (used) {
+      alert(`„${name}“ wird in ${used} Workout${used === 1 ? '' : 's'} verwendet und kann nicht gelöscht werden.`);
+      return;
+    }
     if (!confirm(`„${name}“ löschen?`)) return;
     await db.exercises.delete(id);
     navigate('/exercises', { replace: true });
@@ -80,15 +88,17 @@ export default function ExerciseDetail() {
       </div>
 
       {tab === 'Info' ? (
-        <div className="space-y-5 pb-6">
-          <ExerciseAnimation exercise={exercise} alt={name} />
+        <div className="space-y-5 pb-6 md:grid md:grid-cols-2 md:gap-8 md:space-y-0">
+          <div className="space-y-5">
+            <ExerciseAnimation exercise={exercise} alt={name} />
 
-          <div className="flex flex-wrap gap-2">
-            {chips.map((c) => (
-              <span key={c} className="rounded-full bg-surface px-3 py-1 text-xs text-neutral-300">
-                {c}
-              </span>
-            ))}
+            <div className="flex flex-wrap gap-2">
+              {chips.map((c) => (
+                <span key={c} className="rounded-full bg-surface px-3 py-1 text-xs text-neutral-300">
+                  {c}
+                </span>
+              ))}
+            </div>
           </div>
 
           <section>
@@ -110,7 +120,7 @@ export default function ExerciseDetail() {
           </section>
 
           {instructions.length > 0 && (
-            <section>
+            <section className="md:col-span-2">
               <h2 className="mb-2 font-semibold">Anleitung</h2>
               <ol className="list-decimal space-y-2 pl-5 text-sm leading-relaxed text-neutral-300">
                 {instructions.map((s, i) => (
@@ -121,7 +131,7 @@ export default function ExerciseDetail() {
           )}
 
           {exercise.isCustom && (
-            <button onClick={() => void onDelete()} className="min-h-11 text-sm text-red-400">
+            <button onClick={() => void onDelete()} className="min-h-11 text-sm text-red-400 md:col-span-2 md:justify-self-start">
               Übung löschen
             </button>
           )}

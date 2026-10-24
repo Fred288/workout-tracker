@@ -1,16 +1,11 @@
 import { NavLink } from 'react-router-dom';
+import { NAV_ITEMS } from './nav';
 
-const tabs = [
-  { to: '/profile', label: 'Profil', icon: '👤' },
-  { to: '/history', label: 'Verlauf', icon: '🕒' },
-  { to: '/workout', label: 'Workout', icon: '🏋️' },
-  { to: '/exercises', label: 'Übungen', icon: '📖' },
-];
-
+/** Phone navigation; replaced by SideNav from md upwards. */
 export default function BottomNav() {
   return (
-    <nav className="grid grid-cols-4 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)]">
-      {tabs.map((t) => (
+    <nav className="grid grid-cols-4 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
+      {NAV_ITEMS.map((t) => (
         <NavLink
           key={t.to}
           to={t.to}

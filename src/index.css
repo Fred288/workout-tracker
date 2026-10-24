@@ -63,6 +63,13 @@ body,
   height: 100%;
 }
 
+/* TVs and large screens: scale the whole rem-based UI up. */
+@media (min-width: 1536px) {
+  html {
+    font-size: 20px;
+  }
+}
+
 body {
   background: var(--color-bg);
   color: #f2f2f5;

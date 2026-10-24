@@ -27,7 +27,7 @@ export function displayInstructions(e: Pick<Exercise, 'instructions' | 'instruct
   return e.instructionsDe?.length ? e.instructionsDe : e.instructions;
 }
 
-const normalize = (s: string) =>
+export const normalize = (s: string) =>
   s
     .toLowerCase()
     .normalize('NFD')
