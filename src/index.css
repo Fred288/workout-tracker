@@ -5,6 +5,33 @@
   --color-surface: #16161d;
   --color-border: #26262f;
   --color-accent: #4f8cff;
+  --color-body: #1d1d25;
+  --color-muscle: #34343f;
+}
+
+/* Two-frame exercise "animation": the end frame fades in and out over the start frame. */
+@keyframes frame-fade {
+  0%,
+  35% {
+    opacity: 0;
+  }
+  50%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.frame-fade {
+  animation: frame-fade 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frame-fade {
+    animation: none;
+  }
 }
 
 html,

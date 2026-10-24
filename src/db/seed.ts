@@ -21,8 +21,3 @@ export async function ensureSeeded(): Promise<void> {
     await db.meta.put({ key: SEED_VERSION_KEY, value: seed.version });
   });
 }
-
-/** Base URL for exercise images, honours the GitHub Pages sub path. */
-export function exerciseImageUrl(path: string): string {
-  return `${import.meta.env.BASE_URL}exercises/${path}`;
-}
