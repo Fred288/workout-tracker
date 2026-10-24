@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/dexie';
-import type { Equipment } from '../db/types';
+import type { Equipment, Exercise } from '../db/types';
 import {
   displayName,
   filterExercises,
@@ -11,7 +11,7 @@ import {
 } from '../lib/exercises';
 import { EQUIPMENT_LABELS, categoryLabel } from '../lib/labels';
 import { MUSCLES_BY_LABEL, MUSCLE_LABELS, muscleLabel, type MuscleId } from '../lib/muscleMap';
-import { exerciseImageUrl } from '../lib/images';
+import { exerciseVisual } from '../lib/images';
 import { useExerciseFilters } from '../store/exerciseFilters';
 
 const EQUIPMENT_OPTIONS: { value: EquipmentFilter; label: string }[] = [
@@ -22,6 +22,23 @@ const EQUIPMENT_OPTIONS: { value: EquipmentFilter; label: string }[] = [
     .filter((k) => k !== 'none')
     .map((k) => ({ value: k as EquipmentFilter, label: EQUIPMENT_LABELS[k] })),
 ];
+
+function Thumb({ exercise }: { exercise: Exercise }) {
+  const { frames, kind } = exerciseVisual(exercise);
+  if (!frames.length) return <div className="size-12 shrink-0 rounded-md bg-surface" />;
+  // For drawings the end frame usually shows the movement better.
+  const src = kind === 'illustration' ? (frames[1] ?? frames[0]) : frames[0];
+  return (
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      className={`size-12 shrink-0 rounded-md ${
+        kind === 'illustration' ? 'border border-border bg-surface object-contain p-0.5' : 'bg-white object-cover'
+      }`}
+    />
+  );
+}
 
 const select =
   'min-h-11 min-w-0 flex-1 rounded-lg border border-border bg-surface px-2 text-sm';
@@ -135,16 +152,7 @@ export default function Exercises() {
                       to={`/exercises/${encodeURIComponent(e.id)}`}
                       className="flex min-h-14 items-center gap-3 border-b border-border py-2"
                     >
-                      {e.images[0] ? (
-                        <img
-                          src={exerciseImageUrl(e.images[0])}
-                          alt=""
-                          loading="lazy"
-                          className="size-12 shrink-0 rounded-md bg-white object-cover"
-                        />
-                      ) : (
-                        <div className="size-12 shrink-0 rounded-md bg-surface" />
-                      )}
+                      <Thumb exercise={e} />
                       <div className="min-w-0">
                         <div className="truncate">{displayName(e)}</div>
                         <div className="truncate text-xs text-neutral-500">

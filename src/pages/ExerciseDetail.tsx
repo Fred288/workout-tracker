@@ -81,7 +81,7 @@ export default function ExerciseDetail() {
 
       {tab === 'Info' ? (
         <div className="space-y-5 pb-6">
-          <ExerciseAnimation images={exercise.images} alt={name} />
+          <ExerciseAnimation exercise={exercise} alt={name} />
 
           <div className="flex flex-wrap gap-2">
             {chips.map((c) => (

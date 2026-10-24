@@ -28,8 +28,31 @@
   animation: frame-fade 2.4s ease-in-out infinite;
 }
 
+/* Transparent drawings would show both frames at once, so the start frame fades out in step. */
+@keyframes frame-fade-out {
+  0%,
+  35% {
+    opacity: 1;
+  }
+  50%,
+  85% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.frame-fade-out {
+  animation: frame-fade-out 2.4s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .frame-fade {
+    animation: none;
+    opacity: 0;
+  }
+  .frame-fade-out {
     animation: none;
   }
 }

@@ -28,6 +28,7 @@ export interface Exercise {
   instructions: string[];
   instructionsDe?: string[];
   images: string[]; // paths relative to BASE_URL + 'exercises/'
+  illustrations?: string[]; // line drawings (start, end), relative to BASE_URL; preferred over images
   level?: Level;
   isCustom: boolean;
 }

@@ -34,10 +34,11 @@ export default defineConfig({
       workbox: {
         // App shell + seed JSON are precached; exercise images are not (see CLAUDE.md).
         globPatterns: ['**/*.{js,css,html,json,png,svg,ico,woff2}'],
-        globIgnores: ['**/exercises/**'],
+        globIgnores: ['**/exercises/**', '**/illustrations/**'],
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => url.pathname.includes('/exercises/'),
+            urlPattern: ({ url }) =>
+              url.pathname.includes('/exercises/') || url.pathname.includes('/illustrations/'),
             handler: 'CacheFirst',
             options: {
               cacheName: 'exercise-images',

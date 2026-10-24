@@ -57,6 +57,33 @@ export default function Settings() {
         {message && <p className="text-sm text-accent">{message}</p>}
       </section>
 
+      <section className="mt-8 space-y-2 text-sm text-neutral-400">
+        <h2 className="text-sm font-semibold uppercase">Quellen</h2>
+        <p>
+          Übungsdaten und Fotos:{' '}
+          <a className="text-accent" href="https://github.com/yuhonas/free-exercise-db" target="_blank" rel="noreferrer">
+            free-exercise-db
+          </a>{' '}
+          (Unlicense)
+        </p>
+        <p>
+          Zeichnungen:{' '}
+          <a className="text-accent" href="https://github.com/everkinetic/data" target="_blank" rel="noreferrer">
+            Everkinetic
+          </a>
+          ,{' '}
+          <a
+            className="text-accent"
+            href="https://creativecommons.org/licenses/by-sa/4.0/deed.de"
+            target="_blank"
+            rel="noreferrer"
+          >
+            CC BY-SA 4.0
+          </a>
+          , für den Dark Mode umgefärbt
+        </p>
+      </section>
+
       <p className="mt-8 text-sm text-neutral-500">Version {__APP_VERSION__}</p>
     </>
   );
