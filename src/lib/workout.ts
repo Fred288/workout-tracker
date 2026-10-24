@@ -127,6 +127,47 @@ export function toggleSet(
   }));
 }
 
+/** Adds a set that already counts as done; used when editing a finished workout. */
+export function addCompletedSet(w: Workout, weId: string): Workout {
+  const added = addSet(w, weId);
+  return mapExercise(added, weId, (e) => {
+    const last = e.sets.at(-1)!;
+    const prev = e.sets.at(-2);
+    return {
+      ...e,
+      sets: [
+        ...e.sets.slice(0, -1),
+        { ...last, reps: prev?.reps, weightKg: prev?.weightKg, durationSec: prev?.durationSec, distanceM: prev?.distanceM, completed: true },
+      ],
+    };
+  });
+}
+
+/** A fresh workout with the same exercises, set types and values, nothing checked off yet. */
+export function workoutFromPrevious(source: Workout, now: number): Workout {
+  return {
+    id: newId(),
+    name: source.name,
+    startedAt: now,
+    exercises: source.exercises.map((e, i) => ({
+      id: newId(),
+      exerciseId: e.exerciseId,
+      order: i,
+      supersetGroup: e.supersetGroup,
+      restSec: e.restSec,
+      sets: e.sets.map((s) => ({
+        id: newId(),
+        type: s.type,
+        reps: s.reps,
+        weightKg: s.weightKg,
+        durationSec: s.durationSec,
+        distanceM: s.distanceM,
+        completed: false,
+      })),
+    })),
+  };
+}
+
 export function countIncompleteSets(w: Workout): number {
   return w.exercises.reduce((n, e) => n + e.sets.filter((s) => !s.completed).length, 0);
 }

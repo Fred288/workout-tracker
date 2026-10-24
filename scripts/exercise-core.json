@@ -71,6 +71,22 @@
     "Seated Triceps Press", "Dumbbell One-Arm Triceps Extension", "Machine Triceps Extension",
     "Push-Ups - Close Triceps Position"
   ],
+  "_comment_types": "The source has no exercise type, so timed, distance and assisted exercises are set here. Everything else is derived (no equipment = bodyweight reps, otherwise weight x reps).",
+  "types": {
+    "Plank": "duration",
+    "Side Bridge": "duration",
+    "Battling Ropes": "duration",
+    "Child's Pose": "duration",
+    "Farmer's Walk": "distance_duration",
+    "Running, Treadmill": "distance_duration",
+    "Walking, Treadmill": "distance_duration",
+    "Bicycling": "distance_duration",
+    "Bicycling, Stationary": "distance_duration",
+    "Rowing, Stationary": "distance_duration",
+    "Elliptical Trainer": "distance_duration",
+    "Band Assisted Pull-Up": "assisted_bodyweight",
+    "Dip Machine": "assisted_bodyweight"
+  },
   "_comment_recategorize": "Kept exercises from dropped categories (strongman, plyometrics, olympic lifting) move to a remaining one.",
   "recategorize": {
     "Farmer's Walk": "strength",

@@ -5,6 +5,7 @@ import RestTimerBar from './components/RestTimerBar';
 import ActiveWorkoutBanner from './components/ActiveWorkoutBanner';
 import Profile from './pages/Profile';
 import History from './pages/History';
+import HistoryDetail from './pages/HistoryDetail';
 import WorkoutStart from './pages/WorkoutStart';
 import ActiveWorkout from './pages/ActiveWorkout';
 import WorkoutSummary from './pages/WorkoutSummary';
@@ -26,6 +27,7 @@ export default function App() {
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/history" element={<History />} />
+                <Route path="/history/:id" element={<HistoryDetail />} />
                 <Route path="/workout" element={<WorkoutStart />} />
                 <Route path="/workout/active" element={<ActiveWorkout />} />
                 <Route path="/workout/summary/:id" element={<WorkoutSummary />} />

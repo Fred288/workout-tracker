@@ -136,7 +136,10 @@ export default function WorkoutExerciseCard({
   onUpdate,
   onMove,
   onRemove,
+  hideCheck = false,
 }: {
+  /** Editing a finished workout: every set counts as done, so the check column is hidden. */
+  hideCheck?: boolean;
   item: WorkoutExercise;
   exercise: Exercise | undefined;
   previous: WorkoutSet[];
@@ -156,7 +159,13 @@ export default function WorkoutExerciseCard({
   const [openSet, setOpenSet] = useState<string | null>(null);
   const type = exercise?.type ?? 'weight_reps';
   const cols = columnsFor(type, unit);
-  const gridCols = cols.length === 2 ? 'grid-cols-[2.25rem_1fr_4.5rem_4.5rem_2.75rem]' : 'grid-cols-[2.25rem_1fr_9.25rem_2.75rem]';
+  const gridCols = hideCheck
+    ? cols.length === 2
+      ? 'grid-cols-[2.25rem_1fr_4.5rem_4.5rem]'
+      : 'grid-cols-[2.25rem_1fr_9.25rem]'
+    : cols.length === 2
+      ? 'grid-cols-[2.25rem_1fr_4.5rem_4.5rem_2.75rem]'
+      : 'grid-cols-[2.25rem_1fr_9.25rem_2.75rem]';
   const rest = item.restSec ?? DEFAULT_REST_SEC;
   let workingIndex = 0;
 
@@ -239,7 +248,7 @@ export default function WorkoutExerciseCard({
             {c.label}
           </span>
         ))}
-        <span className="text-center">✓</span>
+        {!hideCheck && <span className="text-center">✓</span>}
       </div>
 
       {item.sets.map((s, i) => {
@@ -249,7 +258,9 @@ export default function WorkoutExerciseCard({
         return (
           <div key={s.id}>
             <div
-              className={`grid ${gridCols} items-center gap-2 rounded-md px-1 py-1 ${s.completed ? 'bg-accent/15' : ''}`}
+              className={`grid ${gridCols} items-center gap-2 rounded-md px-1 py-1 ${
+                s.completed && !hideCheck ? 'bg-accent/15' : ''
+              }`}
             >
               <button
                 aria-label={`Satz ${i + 1}: ${meta.label}. Satztyp ändern`}
@@ -275,16 +286,18 @@ export default function WorkoutExerciseCard({
                   }}
                 />
               ))}
-              <button
-                aria-label={s.completed ? 'Satz wieder öffnen' : 'Satz abhaken'}
-                aria-pressed={s.completed}
-                className={`flex h-10 items-center justify-center rounded-md text-lg ${
-                  s.completed ? 'bg-accent text-white' : 'bg-border text-neutral-400'
-                }`}
-                onClick={() => onToggleSet(s, prev)}
-              >
-                ✓
-              </button>
+              {!hideCheck && (
+                <button
+                  aria-label={s.completed ? 'Satz wieder öffnen' : 'Satz abhaken'}
+                  aria-pressed={s.completed}
+                  className={`flex h-10 items-center justify-center rounded-md text-lg ${
+                    s.completed ? 'bg-accent text-white' : 'bg-border text-neutral-400'
+                  }`}
+                  onClick={() => onToggleSet(s, prev)}
+                >
+                  ✓
+                </button>
+              )}
             </div>
             {openSet === s.id && (
               <div className="flex flex-wrap gap-2 px-1 py-2 text-sm">

@@ -150,6 +150,7 @@ for (const [num, names] of Object.entries(ekMap)) {
 // Only the curated core library is seeded, see scripts/exercise-core.json.
 const core = JSON.parse(await readFile('scripts/exercise-core.json', 'utf8')) as {
   names: string[];
+  types: Record<string, ExerciseType>;
   recategorize: Record<string, string>;
 };
 const coreNames = new Set(core.names);
@@ -159,6 +160,11 @@ for (const n of [...coreNames, ...Object.keys(core.recategorize)]) {
 if (coreNames.size !== core.names.length) throw new Error('exercise-core: duplicate names');
 exercises = exercises.filter((e) => coreNames.has(e.name));
 for (const [name, category] of Object.entries(core.recategorize)) byName.get(name)!.category = category;
+for (const [name, type] of Object.entries(core.types)) {
+  const e = byName.get(name);
+  if (!e || !coreNames.has(name)) throw new Error(`exercise-core types: "${name}" is not in the core list`);
+  e.type = type;
+}
 const KEPT_CATEGORIES = ['strength', 'stretching', 'powerlifting', 'cardio'];
 const odd = exercises.filter((e) => e.category && !KEPT_CATEGORIES.includes(e.category));
 if (odd.length) throw new Error(`Recategorize these: ${odd.map((e) => e.name).join(', ')}`);

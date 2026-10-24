@@ -66,13 +66,22 @@ export default function WorkoutSummary() {
         })}
       </ul>
 
-      <Link
-        to="/workout"
-        replace
-        className="mt-6 flex min-h-12 items-center justify-center rounded-lg bg-accent font-semibold text-white md:inline-flex md:px-8"
-      >
-        Fertig
-      </Link>
+      <div className="mt-6 flex flex-wrap gap-2">
+        <Link
+          to="/workout"
+          replace
+          className="flex min-h-12 flex-1 items-center justify-center rounded-lg bg-accent font-semibold text-white md:flex-none md:px-8"
+        >
+          Fertig
+        </Link>
+        <Link
+          to={`/history/${w.id}`}
+          replace
+          className="flex min-h-12 items-center justify-center rounded-lg border border-border bg-surface px-4 text-sm"
+        >
+          Im Verlauf ansehen
+        </Link>
+      </div>
     </div>
   );
 }
