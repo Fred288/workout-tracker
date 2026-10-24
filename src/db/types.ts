@@ -85,6 +85,7 @@ export interface Profile {
   name: string;
   birthYear?: number;
   heightCm?: number;
+  gender?: 'female' | 'male' | 'diverse';
   unit: 'kg' | 'lb';
   targetWeightKg?: number;
   workoutsPerWeekGoal: number;
