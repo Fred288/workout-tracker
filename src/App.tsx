@@ -4,6 +4,7 @@ import Profile from './pages/Profile';
 import History from './pages/History';
 import WorkoutStart from './pages/WorkoutStart';
 import Exercises from './pages/Exercises';
+import Settings from './pages/Settings';
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
         <main className="flex-1 overflow-y-auto px-4 pt-[env(safe-area-inset-top)]">
           <Routes>
             <Route path="/profile" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/history" element={<History />} />
             <Route path="/workout" element={<WorkoutStart />} />
             <Route path="/exercises" element={<Exercises />} />
