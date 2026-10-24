@@ -6,6 +6,8 @@ import { startWorkout, useActiveWorkout } from '../db/activeWorkout';
 import { saveWorkoutAsTemplate } from '../db/templates';
 import type { Workout } from '../db/types';
 import WorkoutExerciseCard from '../components/WorkoutExerciseCard';
+import RecordBadges from '../components/RecordBadges';
+import { workoutRecords } from '../lib/records';
 import { displayName } from '../lib/exercises';
 import { formatDuration, formatSet } from '../lib/format';
 import { fromLocalInput, toLocalInput } from '../lib/history';
@@ -52,6 +54,12 @@ export default function HistoryDetail() {
     );
   }
   const { workout: w, earlier, exercises } = data;
+  const prs = new Map(
+    workoutRecords([w, ...earlier], w.id, new Map([...exercises.values()].map((e) => [e.id, e.type]))).map((r) => [
+      r.exerciseId,
+      r.kinds,
+    ]),
+  );
   const save = (fn: (x: Workout) => Workout) => void db.workouts.put(fn(w));
 
   async function onRepeat() {
@@ -184,6 +192,7 @@ export default function HistoryDetail() {
                   >
                     {ex ? displayName(ex) : 'Unbekannte Übung'}
                   </Link>
+                  <RecordBadges kinds={prs.get(item.exerciseId) ?? []} />
                   <ol className="space-y-0.5 text-sm text-neutral-300">
                     {item.sets.map((s, i) => (
                       <li key={s.id} className="tabular-nums">

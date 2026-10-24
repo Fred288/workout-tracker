@@ -7,6 +7,7 @@ import { displayName } from '../lib/exercises';
 import { formatDuration, formatSet } from '../lib/format';
 import { groupByMonth } from '../lib/history';
 import { bestSet, workoutDurationMs, workoutVolume } from '../lib/stats';
+import { workoutRecords } from '../lib/records';
 import { formatNumber, kgToUnit, useWeightUnit } from '../lib/units';
 
 export default function History() {
@@ -18,6 +19,14 @@ export default function History() {
     return { workouts, exercises: new Map(list.filter((e) => !!e).map((e) => [e!.id, e!])) };
   }, []);
   const groups = useMemo(() => groupByMonth(data?.workouts ?? []), [data]);
+  // Exercises with a new record, per workout.
+  const prs = useMemo(() => {
+    if (!data) return new Map<string, Set<string>>();
+    const types = new Map([...data.exercises.values()].map((e) => [e.id, e.type]));
+    return new Map(
+      data.workouts.map((w) => [w.id, new Set(workoutRecords(data.workouts, w.id, types).map((r) => r.exerciseId))]),
+    );
+  }, [data]);
 
   return (
     <>
@@ -48,9 +57,15 @@ export default function History() {
                           })}
                         </span>
                       </div>
-                      <div className="mb-2 text-xs text-neutral-500">
-                        {formatDuration(workoutDurationMs(w))} ·{' '}
-                        {formatNumber(kgToUnit(workoutVolume(w), unit))} {unit}
+                      <div className="mb-2 flex items-center gap-2 text-xs text-neutral-500">
+                        <span>
+                          {formatDuration(workoutDurationMs(w))} · {formatNumber(kgToUnit(workoutVolume(w), unit))} {unit}
+                        </span>
+                        {!!prs.get(w.id)?.size && (
+                          <span className="rounded-full bg-amber-400/15 px-2 py-0.5 font-medium text-amber-300">
+                            🏆 {prs.get(w.id)!.size} Rekord{prs.get(w.id)!.size === 1 ? '' : 'e'}
+                          </span>
+                        )}
                       </div>
                       <ul className="space-y-0.5 text-sm text-neutral-300">
                         {w.exercises.slice(0, 5).map((e) => {
@@ -59,6 +74,11 @@ export default function History() {
                           return (
                             <li key={e.id} className="flex justify-between gap-3">
                               <span className="truncate">
+                                {prs.get(w.id)?.has(e.exerciseId) && (
+                                  <span className="mr-1" role="img" aria-label="Neuer Rekord">
+                                    🏆
+                                  </span>
+                                )}
                                 {e.sets.length} × {ex ? displayName(ex) : 'Unbekannte Übung'}
                               </span>
                               <span className="shrink-0 tabular-nums text-neutral-500">

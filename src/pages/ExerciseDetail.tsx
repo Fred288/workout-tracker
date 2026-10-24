@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/dexie';
 import ExerciseAnimation from '../components/ExerciseAnimation';
 import MuscleBody from '../components/MuscleBody';
+import ExerciseStats from '../components/ExerciseStats';
 import { displayInstructions, displayName } from '../lib/exercises';
 import { EQUIPMENT_LABELS, LEVEL_LABELS, TYPE_LABELS, categoryLabel } from '../lib/labels';
 import { muscleLabel } from '../lib/muscleMap';
@@ -137,9 +138,7 @@ export default function ExerciseDetail() {
           )}
         </div>
       ) : (
-        <p className="py-8 text-center text-sm text-neutral-500">
-          Noch keine Daten. Absolviere ein Workout mit dieser Übung.
-        </p>
+        <ExerciseStats exercise={exercise} tab={tab} />
       )}
     </>
   );

@@ -1,7 +1,6 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import BottomNav from './components/BottomNav';
 import SideNav from './components/SideNav';
-import RestTimerBar from './components/RestTimerBar';
 import ActiveWorkoutBanner from './components/ActiveWorkoutBanner';
 import Profile from './pages/Profile';
 import History from './pages/History';
@@ -13,6 +12,7 @@ import Exercises from './pages/Exercises';
 import ExerciseDetail from './pages/ExerciseDetail';
 import ExerciseEdit from './pages/ExerciseEdit';
 import Settings from './pages/Settings';
+import Records from './pages/Records';
 
 export default function App() {
   return (
@@ -32,6 +32,7 @@ export default function App() {
                 <Route path="/workout/active" element={<ActiveWorkout />} />
                 <Route path="/workout/summary/:id" element={<WorkoutSummary />} />
                 <Route path="/exercises" element={<Exercises />} />
+                <Route path="/records" element={<Records />} />
                 <Route path="/exercises/new" element={<ExerciseEdit />} />
                 <Route path="/exercises/:id" element={<ExerciseDetail />} />
                 <Route path="/exercises/:id/edit" element={<ExerciseEdit />} />
@@ -39,7 +40,6 @@ export default function App() {
               </Routes>
             </div>
           </main>
-          <RestTimerBar />
           <ActiveWorkoutBanner />
           <BottomNav />
         </div>

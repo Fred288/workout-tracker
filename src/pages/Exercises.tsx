@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import ExerciseBrowser from '../components/ExerciseBrowser';
+import ExercisesTabs from '../components/ExercisesTabs';
 import { useExerciseFilters } from '../store/exerciseFilters';
 
 export default function Exercises() {
@@ -10,12 +11,15 @@ export default function Exercises() {
       onChange={set}
       onReset={reset}
       header={
-        <div className="flex items-center justify-between pt-4">
-          <h1 className="text-2xl font-bold">Übungen</h1>
-          <Link to="/exercises/new" className="flex min-h-11 items-center rounded-lg px-3 font-medium text-accent">
-            + Neu
-          </Link>
-        </div>
+        <>
+          <div className="flex items-center justify-between pt-4">
+            <h1 className="text-2xl font-bold">Übungen</h1>
+            <Link to="/exercises/new" className="flex min-h-11 items-center rounded-lg px-3 font-medium text-accent">
+              + Neu
+            </Link>
+          </div>
+          <ExercisesTabs />
+        </>
       }
     />
   );

@@ -4,7 +4,6 @@ import type { Exercise, ExerciseType, SetType, WorkoutExercise, WorkoutSet } fro
 import { displayName } from '../lib/exercises';
 import { formatClock, formatSet, parseClock } from '../lib/format';
 import { formatNumber, kgToUnit, parseNumber, unitToKg, type WeightUnit } from '../lib/units';
-import { DEFAULT_REST_SEC } from '../lib/workout';
 
 type FieldKind = 'weight' | 'reps' | 'duration' | 'distance';
 interface Column {
@@ -119,7 +118,6 @@ const SET_TYPES: { type: SetType; label: string; short: string; cls: string }[] 
   { type: 'failure', label: 'Bis zum Versagen', short: 'V', cls: 'text-red-400' },
 ];
 
-const REST_OPTIONS = [0, 30, 45, 60, 90, 120, 150, 180, 240, 300];
 
 export default function WorkoutExerciseCard({
   item,
@@ -151,7 +149,7 @@ export default function WorkoutExerciseCard({
   onSetType: (setId: string, type: SetType) => void;
   onRemoveSet: (setId: string) => void;
   onAddSet: () => void;
-  onUpdate: (patch: { note?: string; restSec?: number }) => void;
+  onUpdate: (patch: { note?: string }) => void;
   onMove: (dir: -1 | 1) => void;
   onRemove: () => void;
 }) {
@@ -166,7 +164,6 @@ export default function WorkoutExerciseCard({
     : cols.length === 2
       ? 'grid-cols-[2.25rem_1fr_4.5rem_4.5rem_2.75rem]'
       : 'grid-cols-[2.25rem_1fr_9.25rem_2.75rem]';
-  const rest = item.restSec ?? DEFAULT_REST_SEC;
   let workingIndex = 0;
 
   return (
@@ -190,21 +187,7 @@ export default function WorkoutExerciseCard({
       </div>
 
       {menuOpen && (
-        <div className="mb-3 space-y-2 rounded-lg bg-border/50 p-2 text-sm">
-          <label className="flex min-h-11 items-center justify-between gap-3 px-2">
-            Pausenzeit
-            <select
-              className="min-h-10 rounded-md bg-surface px-2"
-              value={rest}
-              onChange={(e) => onUpdate({ restSec: Number(e.target.value) })}
-            >
-              {REST_OPTIONS.map((s) => (
-                <option key={s} value={s}>
-                  {s === 0 ? 'Aus' : formatClock(s)}
-                </option>
-              ))}
-            </select>
-          </label>
+        <div className="mb-3 rounded-lg bg-border/50 p-2 text-sm">
           <div className="flex flex-wrap gap-2">
             {item.note === undefined && (
               <button className="min-h-10 rounded-md bg-surface px-3" onClick={() => onUpdate({ note: '' })}>

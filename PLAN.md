@@ -25,7 +25,7 @@ Dieses Dokument ist als Arbeitsgrundlage für Claude Code gedacht. Lege es als `
 | Sync (optional, Phase 9) | Supabase (Postgres + Auth) | Geräteübergreifend, später TV-Steuerung per Handy. |
 | Native iOS (optional, Phase 11) | Capacitor um die gleiche Web-App | Nur falls PWA nicht reicht. Kostenloser Apple-ID-Build läuft 7 Tage, mit Developer-Account (99 $/Jahr) ein Jahr. |
 
-Hinweis zur PWA auf iOS: Ein Wake Lock (Display bleibt an) ist in Safari verfügbar, Push-Benachrichtigungen funktionieren nur für installierte PWAs, Background Sync gibt es nicht. Konsequenz für die App: Der Pausen-Timer muss auf **Zeitstempeln** basieren (Endzeit speichern, bei Rückkehr neu berechnen), nicht auf `setInterval`. Außerdem regelmäßiger JSON-Export als Backup einbauen.
+Hinweis zur PWA auf iOS: Ein Wake Lock (Display bleibt an) ist in Safari verfügbar, Push-Benachrichtigungen funktionieren nur für installierte PWAs, Background Sync gibt es nicht. Konsequenz für die App: Zeitanzeigen (z. B. die Workout-Dauer) müssen auf **Zeitstempeln** basieren (Endzeit speichern, bei Rückkehr neu berechnen), nicht auf `setInterval`. Außerdem regelmäßiger JSON-Export als Backup einbauen.
 
 ---
 
@@ -75,7 +75,7 @@ Untere Tab-Leiste: **Profil · Verlauf · Workout · Übungen** (Rekorde als Tab
   - Eingaben: Wiederholungen und Gewicht (bei Körpergewichtsübungen: Zusatzgewicht, optional)
   - Spalte "Vorher" zeigt die Werte vom letzten Mal, Abhaken per Checkbox
   - Satztyp: Normal, Aufwärmen, Dropset, Bis zum Versagen
-  - Pausen-Timer nach Abhaken (Standard z. B. 90 s, pro Übung einstellbar)
+  - ~~Pausen-Timer nach Abhaken~~ – bewusst entfernt (Wunsch: kein Timer nach abgeschlossenem Satz)
   - Notiz pro Übung und pro Workout, Übung löschen oder umsortieren, Supersets (später)
   - Laufender Timer, "Workout beenden" (Zusammenfassung mit neuen Rekorden), "Verwerfen"
   - **Auto-Save**: Jeder Zwischenstand wird sofort in IndexedDB gespeichert, damit nichts verloren geht, wenn Safari die App im Hintergrund beendet
@@ -252,7 +252,7 @@ Dexie-Schema laut Abschnitt 4. Seed-Skript `build-exercise-seed.ts`: free-exerci
 Alphabetische Liste mit Index, Suche und Filtern (Ausrüstung, Muskelgruppe). Detailansicht Tab "Info" mit Anleitung, Überblend-Animation und Muskel-Silhouette. Eigene Übung anlegen.
 
 **Phase 3 – Aktives Workout**
-Leeres Workout starten, Übungen hinzufügen, Sätze hinzufügen/entfernen, Reps und Gewicht eingeben, Satz abhaken, Spalte "Vorher", Pausen-Timer, Wake Lock, Auto-Save, Workout beenden/verwerfen.
+Leeres Workout starten, Übungen hinzufügen, Sätze hinzufügen/entfernen, Reps und Gewicht eingeben, Satz abhaken, Spalte "Vorher", Wake Lock, Auto-Save, Workout beenden/verwerfen.
 
 **Phase 4 – Verlauf**
 Liste und Detailansicht, Löschen und Bearbeiten, "Workout wiederholen".

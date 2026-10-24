@@ -4,8 +4,6 @@ import { newId } from './id';
 // Pure, immutable operations on a workout. The active workout page applies them and
 // writes the result straight to IndexedDB, so every change is auto-saved.
 
-export const DEFAULT_REST_SEC = 90;
-
 export function defaultWorkoutName(date: Date): string {
   const h = date.getHours();
   if (h >= 5 && h < 11) return 'Morgen-Workout';
@@ -55,7 +53,7 @@ export function moveExercise(w: Workout, weId: string, dir: -1 | 1): Workout {
 export function updateExercise(
   w: Workout,
   weId: string,
-  patch: Partial<Pick<WorkoutExercise, 'note' | 'restSec'>>,
+  patch: Partial<Pick<WorkoutExercise, 'note'>>,
 ): Workout {
   return mapExercise(w, weId, (e) => ({ ...e, ...patch }));
 }
@@ -154,7 +152,6 @@ export function workoutFromPrevious(source: Workout, now: number): Workout {
       exerciseId: e.exerciseId,
       order: i,
       supersetGroup: e.supersetGroup,
-      restSec: e.restSec,
       sets: e.sets.map((s) => ({
         id: newId(),
         type: s.type,
@@ -180,7 +177,6 @@ export function templateFromWorkout(w: Workout, name: string): Template {
         exerciseId: e.exerciseId,
         order: i,
         supersetGroup: e.supersetGroup,
-        restSec: e.restSec,
         sets: e.sets.map((s) => ({
           type: s.type,
           reps: s.reps,
@@ -204,7 +200,6 @@ export function workoutFromTemplate(t: Template, now: number): Workout {
       exerciseId: e.exerciseId,
       order: i,
       supersetGroup: e.supersetGroup,
-      restSec: e.restSec,
       sets: (e.sets.length ? e.sets : [{ type: 'normal' as const }]).map((s) => ({
         id: newId(),
         ...s,

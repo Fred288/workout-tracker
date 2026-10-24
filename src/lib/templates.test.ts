@@ -6,7 +6,7 @@ describe('templates', () => {
     let w = addExercises(createWorkout(0, 'Push'), ['bench', 'empty']);
     const e = w.exercises[0];
     w = updateSet(w, e.id, e.sets[0].id, { type: 'drop', reps: 8, weightKg: 60, completed: true });
-    w = { ...w, exercises: [{ ...w.exercises[0], note: 'secret', restSec: 120 }, { ...w.exercises[1], sets: [] }] };
+    w = { ...w, exercises: [{ ...w.exercises[0], note: 'secret' }, { ...w.exercises[1], sets: [] }] };
     return w;
   };
 
@@ -14,7 +14,7 @@ describe('templates', () => {
     const t = templateFromWorkout(base(), '  Mein Push  ');
     expect(t.name).toBe('Mein Push');
     expect(t.exercises).toHaveLength(1);
-    expect(t.exercises[0]).toMatchObject({ exerciseId: 'bench', restSec: 120, order: 0 });
+    expect(t.exercises[0]).toMatchObject({ exerciseId: 'bench', order: 0 });
     expect(t.exercises[0]).not.toHaveProperty('note');
     expect(t.exercises[0].sets).toEqual([
       { type: 'drop', reps: 8, weightKg: 60, durationSec: undefined, distanceM: undefined },

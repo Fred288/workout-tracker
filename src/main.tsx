@@ -9,6 +9,9 @@ registerSW({ immediate: true });
 
 ensureSeeded().catch((e) => console.error('Exercise seed failed', e));
 
+// Ask the browser not to evict our IndexedDB under storage pressure (best effort, no prompt on iOS).
+void navigator.storage?.persist?.().catch(() => false);
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

@@ -49,7 +49,6 @@ export interface WorkoutExercise {
   exerciseId: string;
   order: number;
   supersetGroup?: number;
-  restSec?: number;
   note?: string;
   sets: WorkoutSet[];
 }

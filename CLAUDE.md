@@ -16,5 +16,6 @@ Private Strong-style workout tracker (PWA). Full spec: see PLAN.md.
 - GitHub Pages: `base` and manifest scope/start_url/id on the repo path, `HashRouter`, assets only via `import.meta.env.BASE_URL`. Never commit personal data (`*.backup.json` in .gitignore).
 - Stats are always computed from sets, never stored twice.
 - Timers use timestamps (end time), never counting intervals.
+- No rest timer after completing a set (removed on request); don't reintroduce it.
 - Every stats function gets vitest unit tests.
 - Do not copy Strong assets, logos or texts.

@@ -2,16 +2,14 @@ import { useMemo, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/dexie';
-import { discardActive, finishActive, mutateActive, startRest, useActiveWorkout } from '../db/activeWorkout';
+import { discardActive, finishActive, mutateActive, useActiveWorkout } from '../db/activeWorkout';
 import type { Workout } from '../db/types';
 import ExercisePicker from '../components/ExercisePicker';
 import WorkoutExerciseCard from '../components/WorkoutExerciseCard';
 import { formatClock } from '../lib/format';
 import { useNow, useWakeLock } from '../lib/hooks';
-import { unlockAudio } from '../lib/sound';
 import { useWeightUnit } from '../lib/units';
 import {
-  DEFAULT_REST_SEC,
   addExercises,
   addSet,
   countCompletedSets,
@@ -117,12 +115,7 @@ export default function ActiveWorkout() {
             onUpdate={(patch) => mutate((w) => updateExercise(w, item.id, patch))}
             onMove={(dir) => mutate((w) => moveExercise(w, item.id, dir))}
             onRemove={() => mutate((w) => removeExercise(w, item.id))}
-            onToggleSet={(set, prev) => {
-              unlockAudio();
-              mutate((w) => toggleSet(w, item.id, set.id, prev));
-              const rest = item.restSec ?? DEFAULT_REST_SEC;
-              if (!set.completed && rest > 0) void startRest(rest, item.id);
-            }}
+            onToggleSet={(set, prev) => mutate((w) => toggleSet(w, item.id, set.id, prev))}
           />
         ))}
       </div>
