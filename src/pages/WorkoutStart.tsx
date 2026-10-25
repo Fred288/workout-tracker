@@ -48,6 +48,13 @@ export default function WorkoutStart() {
   return (
     <div className="pb-6">
       <PageTitle>Workout</PageTitle>
+      <section className="mb-4 rounded-xl border border-emerald-500/50 bg-emerald-500/10 p-4">
+        <h2 className="font-semibold text-emerald-300">Neu hier?</h2>
+        <p className="mt-1 text-sm text-neutral-400">Die App-Tour erklärt Schritt für Schritt alle Bereiche. Sie startet nur auf Knopfdruck.</p>
+        <button className="mt-3 min-h-11 w-full rounded-lg bg-emerald-600 text-sm font-semibold text-white md:w-auto md:px-6" onClick={tour.start}>
+          App-Tour starten
+        </button>
+      </section>
       <Reminders />
       <div data-tour="start-workout">
       {active === undefined ? null : active ? (
@@ -179,13 +186,6 @@ export default function WorkoutStart() {
         <p className="mt-4 text-xs text-neutral-500">Beende oder verwirf das laufende Workout, um ein neues zu starten.</p>
       )}
 
-      <section className="mt-8 rounded-xl border border-border bg-surface p-4">
-        <h2 className="font-semibold">Neu hier?</h2>
-        <p className="mt-1 text-sm text-neutral-400">Die App-Tour erklärt Schritt für Schritt alle Bereiche. Sie startet nur auf Knopfdruck.</p>
-        <button className="mt-3 min-h-11 w-full rounded-lg bg-border text-sm font-medium md:w-auto md:px-6" onClick={tour.start}>
-          App-Tour starten
-        </button>
-      </section>
     </div>
   );
 }
