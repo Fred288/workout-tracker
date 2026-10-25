@@ -25,6 +25,8 @@ import {
 import type { Goal, GoalType, Level, Plan, PlannedSession, Weekday } from '../db/types';
 import { WEEKDAYS_SHORT, addDays, daysBetween, formatDay, isIsoDate, parseIso, toIso } from '../lib/dates';
 import { formatClock, parseClock } from '../lib/format';
+import { parseNumber } from '../lib/units';
+import { TRI_GOALS, isTriGoal } from '../lib/planGeneratorTri';
 import { GOAL_LABEL, RUN_GOALS, planProgress, sessionStatus, sessionsOfWeek, weekIndexOf, type SessionStatus } from '../lib/plan';
 import { PRESET_GROUPS } from '../lib/endurancePresets';
 import { SPORT_LABEL } from '../lib/sports';
@@ -124,11 +126,20 @@ function GoalForm({ today }: { today: string }) {
       <label className="block text-sm text-neutral-400">
         Wettkampf
         <select className={`${input} mt-1 block w-full text-neutral-100`} value={type} onChange={(e) => setType(e.target.value as GoalType)}>
-          {RUN_GOALS.map((g) => (
-            <option key={g} value={g}>
-              {GOAL_LABEL[g]}
-            </option>
-          ))}
+          <optgroup label="Laufen">
+            {RUN_GOALS.map((g) => (
+              <option key={g} value={g}>
+                {GOAL_LABEL[g]}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="Triathlon">
+            {TRI_GOALS.map((g) => (
+              <option key={g} value={g}>
+                {GOAL_LABEL[g]}
+              </option>
+            ))}
+          </optgroup>
         </select>
       </label>
       <label className="block text-sm text-neutral-400">
@@ -208,6 +219,7 @@ function PlanView({
       {setup ? (
         <PlanSetup
           plan={plan}
+          tri={isTriGoal(goal.type)}
           replacing={hasFuture}
           onCancel={hasFuture ? () => setSetup(false) : undefined}
           onDone={(w) => {
@@ -470,33 +482,40 @@ const LEVELS: { value: Level; label: string }[] = [
 /** Generator settings: run days, long run day, level and current longest run. */
 function PlanSetup({
   plan,
+  tri,
   replacing,
   today,
   onCancel,
   onDone,
 }: {
   plan: Plan;
+  /** Triathlon goal: training days, long ride day and weekly hours instead of run settings. */
+  tri: boolean;
   replacing: boolean;
   today: string;
   onCancel?: () => void;
   onDone: (warnings: string[]) => void;
 }) {
   const saved = Object.keys(plan.availability).map(Number) as Weekday[];
-  const [days, setDays] = useState<Weekday[]>(saved.length ? saved : [1, 3, 6]);
-  const [longDay, setLongDay] = useState<Weekday>(plan.longRunDay ?? 6);
+  const [days, setDays] = useState<Weekday[]>(saved.length ? saved : tri ? [0, 1, 2, 3, 5, 6] : [1, 3, 6]);
+  const [longDay, setLongDay] = useState<Weekday>(plan.longRunDay ?? (tri ? 5 : 6));
   const [level, setLevel] = useState<Level>(plan.level === 'beginner' ? 'beginner' : 'intermediate');
-  const [baseline, setBaseline] = useState(String(plan.baselineLongRunMin ?? 60));
+  const [baseline, setBaseline] = useState(tri ? String(plan.hoursPerWeek ?? 5).replace('.', ',') : String(plan.baselineLongRunMin ?? 60));
   const [error, setError] = useState('');
-  const baselineMin = Number(baseline);
+  const baselineValue = parseNumber(baseline) ?? NaN;
   const longDayValid = days.includes(longDay);
-  const valid = days.length >= 2 && longDayValid && Number.isFinite(baselineMin) && baselineMin >= 10 && baselineMin <= 300;
+  const baselineValid = tri ? baselineValue >= 0.5 && baselineValue <= 30 : baselineValue >= 10 && baselineValue <= 300;
+  const valid = days.length >= (tri ? 3 : 2) && longDayValid && baselineValid;
 
   const toggle = (d: Weekday) => setDays((xs) => (xs.includes(d) ? xs.filter((x) => x !== d) : [...xs, d].sort((a, b) => a - b)));
 
   async function submit() {
     if (replacing && !confirm('Offene Einheiten ab heute werden durch den neuen Plan ersetzt. Erledigte bleiben. Fortfahren?')) return;
     try {
-      onDone(await generatePlanSessions(plan.id, { runDays: days, longRunDay: longDay, level, baselineLongRunMin: baselineMin }, today));
+      const settings = tri
+        ? { runDays: days, longRunDay: longDay, level, baselineLongRunMin: plan.baselineLongRunMin ?? 60, hoursPerWeek: baselineValue }
+        : { runDays: days, longRunDay: longDay, level, baselineLongRunMin: Math.round(baselineValue) };
+      onDone(await generatePlanSessions(plan.id, settings, today));
     } catch (e) {
       setError((e as Error).message);
     }
@@ -506,7 +525,7 @@ function PlanSetup({
     <section className="space-y-4 rounded-xl border border-border bg-surface p-4">
       <h2 className="text-lg font-semibold">{replacing ? 'Plan neu erstellen' : 'Plan erstellen'}</h2>
       <fieldset>
-        <legend className="mb-1 text-sm text-neutral-400">Lauftage</legend>
+        <legend className="mb-1 text-sm text-neutral-400">{tri ? 'Trainingstage (ideal 5 bis 7)' : 'Lauftage'}</legend>
         <div className="grid grid-cols-7 gap-1">
           {WEEKDAYS_SHORT.map((label, i) => {
             const d = i as Weekday;
@@ -527,7 +546,7 @@ function PlanSetup({
       </fieldset>
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="block text-sm text-neutral-400">
-          Langer Lauf am
+          {tri ? 'Lange Radeinheit am' : 'Langer Lauf am'}
           <select
             className={`${input} mt-1 block w-full text-neutral-100`}
             value={longDay}
@@ -551,16 +570,19 @@ function PlanSetup({
           </select>
         </label>
         <label className="block text-sm text-neutral-400">
-          Längster Lauf zuletzt (min)
+          {tri ? 'Training zuletzt (h pro Woche)' : 'Längster Lauf zuletzt (min)'}
           <input
-            inputMode="numeric"
+            inputMode={tri ? 'decimal' : 'numeric'}
             className={`${input} mt-1 block w-full text-neutral-100`}
             value={baseline}
             onChange={(e) => setBaseline(e.target.value)}
           />
         </label>
       </div>
-      {!longDayValid && days.length > 0 && <p className="text-sm text-amber-300">Wähle einen Lauftag für den langen Lauf.</p>}
+      {!longDayValid && days.length > 0 && (
+        <p className="text-sm text-amber-300">{tri ? 'Wähle einen Trainingstag für die lange Radeinheit.' : 'Wähle einen Lauftag für den langen Lauf.'}</p>
+      )}
+      {tri && <p className="text-xs text-neutral-500">Der lange Lauf liegt am Trainingstag nach der langen Radeinheit, Samstag als langer Tag passt meist am besten.</p>}
       {error && <p className="text-sm text-red-400">{error}</p>}
       <div className="flex gap-2">
         <button className="min-h-12 flex-1 rounded-lg bg-accent font-semibold text-white disabled:opacity-50" disabled={!valid} onClick={() => void submit()}>
@@ -573,8 +595,9 @@ function PlanSetup({
         )}
       </div>
       <p className="text-xs text-neutral-500">
-        Regelbasiert: Grundlage, Aufbau, Spitze, Tapering, jede 3. Woche Ruhewoche, höchstens 10 % mehr pro Woche. Alle Zeiten
-        nach Gefühl bzw. Zone, Paces folgen später.
+        Regelbasiert: Grundlage, Aufbau, Spitze, Tapering, jede 3. Woche Ruhewoche, höchstens 10 % mehr pro Woche.
+        {tri ? ' Pro Woche 2 × Schwimmen, 2 × Rad, 2 × Laufen und Stabi, ab dem Aufbau Koppeltraining.' : ''} Intensität nach Zone,
+        die Zielpaces kommen aus „Zonen und Tempo“.
       </p>
     </section>
   );

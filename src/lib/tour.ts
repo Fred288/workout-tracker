@@ -88,14 +88,14 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/endurance',
     target: 'nav-endurance',
     title: 'Ausdauer',
-    text: 'Der Bereich für Ziele und Trainingspläne, bisher für Laufen und die Einheiten für Triathlon.',
+    text: 'Der Bereich für Ziele und Trainingspläne: Laufen (5 km bis Marathon) und Triathlon (Sprint und Olympische Distanz) mit Schwimmen, Rad, Laufen, Stabi und Koppeltraining.',
   },
   {
     id: 'endurance-tabs',
     route: '/endurance',
     target: 'endurance-tabs',
     title: 'Heute, Plan, Auswertung',
-    text: '„Heute“ zeigt die nächste Einheit, die Woche und Vorschläge, falls du etwas verpasst hast oder nicht fit bist. Im „Plan“ legst du ein Ziel mit Datum an und lässt dir einen Plan erstellen. „Auswertung“ zeigt Umfang, Intensität, Fortschritt, Prognose und deine Belastung.',
+    text: '„Heute“ zeigt die nächste Einheit, die Woche und Vorschläge, falls du etwas verpasst hast oder nicht fit bist. Im „Plan“ legst du ein Ziel mit Datum an und lässt dir einen Plan erstellen, mit deinen Trainingstagen und deinem aktuellen Umfang als Startpunkt. „Auswertung“ zeigt Umfang, Intensität, Fortschritt, Prognose und deine Belastung.',
   },
   {
     id: 'endurance-more',

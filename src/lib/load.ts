@@ -2,7 +2,7 @@ import type { Exercise, GoalType, PlannedSession, Workout, WorkoutSet, Zone } fr
 import { addDays, daysBetween, toIso } from './dates';
 import { DEFAULT_ZONE } from './runTemplates';
 import { elapsedMs } from './runClock';
-import { partsOf, stepSeconds } from './sports';
+import { blocksSeconds, partsOf, stepSeconds } from './sports';
 import { zoneFromHr, type HrZones } from './zones';
 
 // Training load model ("Belastungspunkte"), modelled on TrainingPeaks' TSS / CTL / ATL / TSB but
@@ -90,7 +90,7 @@ export function dailyLoads(workouts: Workout[], exercises: ReadonlyMap<string, E
 }
 
 /** Typical race intensity by distance (shorter races are run harder). */
-const RACE_IF: Partial<Record<GoalType, number>> = { '5k': 1.05, '10k': 1.0, half: 0.92, marathon: 0.85 };
+const RACE_IF: Partial<Record<GoalType, number>> = { '5k': 1.05, '10k': 1.0, half: 0.92, marathon: 0.85, sprint: 0.95, olympic: 0.9 };
 const PLAN_PACE_SEC_PER_KM = 360;
 
 /**
@@ -100,6 +100,8 @@ const PLAN_PACE_SEC_PER_KM = 360;
 export function plannedLoad(s: Pick<PlannedSession, 'blocks' | 'kind'> & Partial<Pick<PlannedSession, 'parts' | 'sport'>>, opts: { goalType?: GoalType; raceTimeSec?: number } = {}): number {
   if (s.kind === 'race') {
     const intensity = (opts.goalType && RACE_IF[opts.goalType]) ?? 0.9;
+    // Triathlon: every leg at race intensity, timed at planning speeds.
+    if (s.parts?.length) return s.parts.reduce((n, p) => n + points(blocksSeconds(p.sport, p.blocks), intensity), 0);
     const distance = s.blocks?.[0]?.steps[0]?.distanceM ?? 0;
     const sec = opts.raceTimeSec ?? (distance / 1000) * PLAN_PACE_SEC_PER_KM;
     return points(sec, intensity);

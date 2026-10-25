@@ -116,6 +116,18 @@ describe('plannedLoad', () => {
     expect(plannedLoad(race, { goalType: 'marathon', raceTimeSec: 4 * 3600 })).toBeCloseTo(points(4 * 3600, 0.85));
     expect(plannedLoad(race, { goalType: 'marathon' })).toBeCloseTo(points(42.195 * 360, 0.85));
   });
+
+  it('sums the legs of a triathlon race at race intensity', () => {
+    const tri = {
+      kind: 'race' as const,
+      parts: [
+        { sport: 'swim' as const, blocks: [{ repeat: 1, steps: [{ intensity: 'threshold' as const, distanceM: 750 }] }] },
+        { sport: 'bike' as const, blocks: [{ repeat: 1, steps: [{ intensity: 'threshold' as const, distanceM: 20_000 }] }] },
+        { sport: 'run' as const, blocks: [{ repeat: 1, steps: [{ intensity: 'threshold' as const, distanceM: 5000 }] }] },
+      ],
+    };
+    expect(plannedLoad(tri, { goalType: 'sprint' })).toBeCloseTo(points(750 * 1.2 + 20_000 * 0.144 + 5000 * 0.36, 0.95));
+  });
 });
 
 describe('performanceChart', () => {

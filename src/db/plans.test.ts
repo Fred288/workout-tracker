@@ -200,3 +200,21 @@ describe('adaptation', () => {
     expect((await db.plans.get(planId))!.weeks.at(-1)!.phase).toBe('race');
   });
 });
+
+describe('triathlon plans', () => {
+  it('generates a sprint plan with all sports and keeps the weekly hours', async () => {
+    const { goalId, planId } = await createGoalWithPlan({ type: 'sprint', targetDate: '2027-02-14' }, '2026-10-26');
+    const warnings = await generatePlanSessions(planId, { runDays: [0, 1, 2, 3, 5, 6], longRunDay: 5, level: 'beginner', baselineLongRunMin: 60, hoursPerWeek: 5 }, '2026-10-26');
+    expect(warnings).toEqual([]);
+    const sessions = await db.plannedSessions.where('planId').equals(planId).toArray();
+    expect(new Set(sessions.map((s) => s.sport))).toEqual(new Set(['swim', 'bike', 'run', 'strength', 'brick']));
+    expect(sessions.find((s) => s.kind === 'race')).toMatchObject({ date: '2027-02-14', sport: 'brick' });
+    expect((await db.plans.get(planId))!.hoursPerWeek).toBe(5);
+
+    await moveRace(goalId, '2027-03-07', '2026-11-09');
+    const after = await db.plannedSessions.where('planId').equals(planId).toArray();
+    expect(after.filter((s) => s.kind === 'race').map((s) => s.date)).toEqual(['2027-03-07']);
+    // The new start volume is where the plan stood (last full week), not the original 5 h.
+    expect((await db.plans.get(planId))!.hoursPerWeek).not.toBe(5);
+  });
+});

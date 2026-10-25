@@ -4,9 +4,10 @@ import type { Goal, GoalPriority, GoalType, Level, PlannedSession, Weekday } fro
 import { buildWeeks, newPlan, weekIndexOf, workoutFromSession } from '../lib/plan';
 import { newId } from '../lib/id';
 import { addDays, mondayOf } from '../lib/dates';
-import { baselineAfterBreak, currentLongRunMin, planSettings, type RescheduleSuggestion } from '../lib/adapt';
+import { baselineAfterBreak, currentLongRunMin, currentWeeklyHours, planSettings, type RescheduleSuggestion } from '../lib/adapt';
 import type { Preset } from '../lib/endurancePresets';
 import { generatePlan } from '../lib/planGenerator';
+import { generateTriPlan, isTriGoal } from '../lib/planGeneratorTri';
 
 export interface GoalInput {
   type: GoalType;
@@ -105,6 +106,8 @@ export interface PlanSettings {
   longRunDay: Weekday;
   level: Level;
   baselineLongRunMin: number;
+  /** Triathlon: current hours per week, the start of the progression. */
+  hoursPerWeek?: number;
 }
 
 /**
@@ -117,14 +120,10 @@ export async function generatePlanSessions(planId: string, settings: PlanSetting
     const plan = await db.plans.get(planId);
     const goal = plan && (await db.goals.get(plan.goalId));
     if (!plan || !goal) throw new Error('Plan nicht gefunden.');
-    const result = generatePlan({
-      goalType: goal.type,
-      targetDate: goal.targetDate,
-      startDate: plan.startDate,
-      firstDate: today,
-      pastWeeks: plan.weeks,
-      ...settings,
-    });
+    const common = { targetDate: goal.targetDate, startDate: plan.startDate, firstDate: today, pastWeeks: plan.weeks, level: settings.level };
+    const result = isTriGoal(goal.type)
+      ? generateTriPlan({ ...common, goalType: goal.type, days: settings.runDays, longDay: settings.longRunDay, hoursPerWeek: settings.hoursPerWeek ?? 5 })
+      : generatePlan({ ...common, goalType: goal.type, runDays: settings.runDays, longRunDay: settings.longRunDay, baselineLongRunMin: settings.baselineLongRunMin });
 
     const existing = await db.plannedSessions.where('planId').equals(planId).toArray();
     const linked = new Set(
@@ -144,6 +143,7 @@ export async function generatePlanSessions(planId: string, settings: PlanSetting
       level: settings.level,
       longRunDay: settings.longRunDay,
       baselineLongRunMin: settings.baselineLongRunMin,
+      ...(settings.hoursPerWeek !== undefined ? { hoursPerWeek: settings.hoursPerWeek } : {}),
       availability: Object.fromEntries(settings.runDays.map((d) => [d, ['run']])),
     });
     // Sessions that stay get the week index of the (possibly new) week layout.
@@ -195,7 +195,10 @@ export async function startBreak(planId: string, today: string, days: number): P
   const settings = planSettings(plan);
   if (!settings) return [];
   const long = currentLongRunMin(sessions, today, settings.baselineLongRunMin);
-  return generatePlanSessions(planId, { ...settings, baselineLongRunMin: baselineAfterBreak(long, days) }, back);
+  // The same reduction applies to the weekly hours of a triathlon plan.
+  const factor = baselineAfterBreak(100, days) / 100;
+  const hours = currentWeeklyHours(sessions, today, settings.hoursPerWeek ?? 5);
+  return generatePlanSessions(planId, { ...settings, baselineLongRunMin: baselineAfterBreak(long, days), hoursPerWeek: Math.round(hours * factor * 10) / 10 }, back);
 }
 
 /** Moves the race and, for a generated plan, rebuilds it from today where the plan stands now. */
@@ -205,5 +208,13 @@ export async function moveRace(goalId: string, targetDate: string, today: string
   const settings = plan && planSettings(plan);
   if (!plan || !settings) return [];
   const sessions = await db.plannedSessions.where('planId').equals(plan.id).toArray();
-  return generatePlanSessions(plan.id, { ...settings, baselineLongRunMin: currentLongRunMin(sessions, today, settings.baselineLongRunMin) }, today);
+  return generatePlanSessions(
+    plan.id,
+    {
+      ...settings,
+      baselineLongRunMin: currentLongRunMin(sessions, today, settings.baselineLongRunMin),
+      hoursPerWeek: currentWeeklyHours(sessions, today, settings.hoursPerWeek ?? 5),
+    },
+    today,
+  );
 }

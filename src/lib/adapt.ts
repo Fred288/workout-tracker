@@ -1,6 +1,6 @@
 import type { Plan, PlannedSession, SessionKind, Weekday, Zone } from '../db/types';
 import { addDays, daysBetween, weekdayIndex } from './dates';
-import type { RunSet } from './endurance';
+import { plannedSeconds, type RunSet } from './endurance';
 import { sessionStatus } from './plan';
 import { ZONE_FRACTIONS, paceZones, timeForVdot, vdot, vdotForPace } from './zones';
 
@@ -152,10 +152,24 @@ export function paceSuggestion(samples: PaceSample[], reference: { distanceM: nu
 }
 
 /** Generator settings stored on a plan, undefined if the plan was never generated. */
-export function planSettings(plan: Plan): { runDays: Weekday[]; longRunDay: Weekday; level: Plan['level']; baselineLongRunMin: number } | undefined {
+export function planSettings(plan: Plan): { runDays: Weekday[]; longRunDay: Weekday; level: Plan['level']; baselineLongRunMin: number; hoursPerWeek?: number } | undefined {
   const runDays = Object.keys(plan.availability).map(Number) as Weekday[];
   if (plan.longRunDay === undefined || !runDays.length) return undefined;
-  return { runDays: runDays.sort((a, b) => a - b), longRunDay: plan.longRunDay, level: plan.level, baselineLongRunMin: plan.baselineLongRunMin ?? 60 };
+  return {
+    runDays: runDays.sort((a, b) => a - b),
+    longRunDay: plan.longRunDay,
+    level: plan.level,
+    baselineLongRunMin: plan.baselineLongRunMin ?? 60,
+    ...(plan.hoursPerWeek !== undefined ? { hoursPerWeek: plan.hoursPerWeek } : {}),
+  };
+}
+
+/** Planned hours of the last full week before this one (where a plan stands now). */
+export function currentWeeklyHours(sessions: PlannedSession[], today: string, fallback: number): number {
+  const monday = addDays(today, -weekdayIndex(today));
+  const lastWeek = sessions.filter((s) => s.date >= addDays(monday, -7) && s.date < monday && s.skippedAt === undefined);
+  const hours = lastWeek.reduce((n, s) => n + plannedSeconds(s), 0) / 3600;
+  return hours > 0 ? Math.round(hours * 10) / 10 : fallback;
 }
 
 const longMinutes = (s: PlannedSession) =>
