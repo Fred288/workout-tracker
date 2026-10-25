@@ -98,6 +98,12 @@ export const TOUR_STEPS: TourStep[] = [
     text: '„Heute“ zeigt die nächste Einheit, die Woche und Vorschläge, falls du etwas verpasst hast oder nicht fit bist. Im „Plan“ legst du ein Ziel mit Datum an und lässt dir einen Plan erstellen, mit deinen Trainingstagen und deinem aktuellen Umfang als Startpunkt. „Auswertung“ zeigt Umfang (auch je Sportart), Intensität, Fortschritt, Rad-Leistung, Schwimm-Pace, Prognose und deine Belastung.',
   },
   {
+    id: 'plan-wizard',
+    route: '/endurance',
+    title: 'Plan in vier Schritten',
+    text: 'Unter „Plan“ führt dich ein Assistent: 1. Wettkampf und Datum, 2. Erfahrung und aktueller Umfang, 3. deine Trainingstage und der lange Tag, 4. Vorschau mit Wochen, Phasen, Umfang und einer Beispielwoche. Erst „Plan erstellen“ speichert alles. Die Felder sind sinnvoll vorbelegt, Hinweise erklären jede Angabe. Später änderst du den Plan über „Plan neu erstellen“.',
+  },
+  {
     id: 'endurance-more',
     route: '/endurance',
     title: 'Zonen, Tempo und Import',

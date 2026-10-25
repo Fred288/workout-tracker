@@ -7,6 +7,7 @@ Private Strong-style workout tracker (PWA). Full spec: see PLAN.md.
 - Last update: 2026-10-25. All phases are done and pushed to `main`: PLAN.md phases 0-8, endurance/triathlon module E0-E9 and T1-T3 (ENDURANCE-PLAN.md), run timer overlay, drag-and-drop reordering, app tour.
 - Endurance module (Ausdauer): goals + rule-based plans (run 5 km-marathon, sprint/olympic triathlon), zones (pace/HR/power), load model (fitness/fatigue/form), plan adaptation, GPX/TCX/FIT import, dashboards per sport. Code: `src/lib/` (planGenerator*, zones, load, adapt, endurance*, activity*), `src/db/plans.ts`, `src/pages/Endurance.tsx`.
 - Not yet tried with real data: the triathlon plan and the new dashboards (only unit tests and seeded test data). Feedback from real use is the likely next work.
+- Plan creation (Ausdauer > Plan) is a 4-step wizard with preview (src/components/PlanWizard.tsx, dry run in src/lib/planPreview.ts); only its last step stores goal and plan.
 - Open ideas, not started: Apple Health export import, Web Bluetooth live heart rate, half-ironman distances.
 - Working rules that are easy to forget: update the app tour for every new feature; stop at each phase and ask about the model switch; git needs `git -c safe.directory=F:/Repos/workout-tracker`; commit and push only when asked.
 - Verify with `npx vitest run` and `npm run build`; check new screens at 390 px and desktop width.

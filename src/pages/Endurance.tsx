@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import PageTitle from '../components/PageTitle';
+import PlanWizard from '../components/PlanWizard';
 import ActivityImport from '../components/ActivityImport';
 import EnduranceToday from '../components/EnduranceToday';
 import ZonesSection from '../components/ZonesSection';
@@ -11,7 +12,6 @@ import { useActiveWorkout } from '../db/activeWorkout';
 import { db } from '../db/dexie';
 import {
   addPlannedSession,
-  createGoalWithPlan,
   deleteGoal,
   deleteSession,
   doneSessions,
@@ -22,12 +22,12 @@ import {
   moveRace,
   updateGoal,
 } from '../db/plans';
-import type { Goal, GoalType, Level, Plan, PlannedSession, Weekday } from '../db/types';
+import type { Goal, Level, Plan, PlannedSession, Weekday } from '../db/types';
 import { WEEKDAYS_SHORT, addDays, daysBetween, formatDay, isIsoDate, parseIso, toIso } from '../lib/dates';
 import { formatClock, parseClock } from '../lib/format';
 import { parseNumber } from '../lib/units';
-import { TRI_GOALS, isTriGoal } from '../lib/planGeneratorTri';
-import { GOAL_LABEL, RUN_GOALS, planProgress, sessionStatus, sessionsOfWeek, weekIndexOf, type SessionStatus } from '../lib/plan';
+import { isTriGoal } from '../lib/planGeneratorTri';
+import { GOAL_LABEL, planProgress, sessionStatus, sessionsOfWeek, weekIndexOf, type SessionStatus } from '../lib/plan';
 import { PRESET_GROUPS } from '../lib/endurancePresets';
 import { SPORT_LABEL } from '../lib/sports';
 
@@ -86,7 +86,7 @@ export default function Endurance() {
           {data.goal && data.plan ? (
             <PlanView goal={data.goal} plan={data.plan} sessions={data.sessions} done={data.done} today={today} />
           ) : (
-            <GoalForm today={today} />
+            <PlanWizard today={today} />
           )}
           <ZonesSection />
         </>
@@ -106,65 +106,6 @@ const TABS: { value: Tab; label: string }[] = [
   { value: 'plan', label: 'Plan' },
   { value: 'stats', label: 'Auswertung' },
 ];
-
-function GoalForm({ today }: { today: string }) {
-  const [type, setType] = useState<GoalType>('marathon');
-  const [date, setDate] = useState(addDays(today, 16 * 7));
-  const [time, setTime] = useState('');
-  const timeSec = parseClock(time);
-  const valid = isIsoDate(date) && date > today && (!time.trim() || timeSec !== undefined);
-
-  return (
-    <form
-      className="max-w-lg space-y-4 rounded-xl border border-border bg-surface p-4"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (valid) void createGoalWithPlan({ type, targetDate: date, ...(timeSec ? { targetTimeSec: timeSec } : {}) }, today);
-      }}
-    >
-      <h2 className="text-lg font-semibold">Neues Ziel</h2>
-      <label className="block text-sm text-neutral-400">
-        Wettkampf
-        <select className={`${input} mt-1 block w-full text-neutral-100`} value={type} onChange={(e) => setType(e.target.value as GoalType)}>
-          <optgroup label="Laufen">
-            {RUN_GOALS.map((g) => (
-              <option key={g} value={g}>
-                {GOAL_LABEL[g]}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="Triathlon">
-            {TRI_GOALS.map((g) => (
-              <option key={g} value={g}>
-                {GOAL_LABEL[g]}
-              </option>
-            ))}
-          </optgroup>
-        </select>
-      </label>
-      <label className="block text-sm text-neutral-400">
-        Zieldatum
-        <input type="date" className={`${input} mt-1 block w-full text-neutral-100`} value={date} min={addDays(today, 1)} onChange={(e) => setDate(e.target.value)} />
-      </label>
-      <label className="block text-sm text-neutral-400">
-        Zielzeit (optional, h:mm:ss)
-        <input
-          inputMode="text"
-          placeholder="z. B. 4:15:00"
-          className={`${input} mt-1 block w-full text-neutral-100`}
-          value={time}
-          onChange={(e) => setTime(e.target.value)}
-        />
-      </label>
-      <button type="submit" disabled={!valid} className="min-h-12 w-full rounded-lg bg-accent font-semibold text-white disabled:opacity-50">
-        Ziel anlegen
-      </button>
-      <p className="text-xs text-neutral-500">
-        Der Plan ist eine Orientierung und ersetzt keine Trainingsberatung. Bei Beschwerden ärztlich abklären.
-      </p>
-    </form>
-  );
-}
 
 function PlanView({
   goal,
