@@ -51,6 +51,16 @@ export function moveExercise(w: Workout, weId: string, dir: -1 | 1): Workout {
   return { ...w, exercises: renumber(list) };
 }
 
+/** Moves an exercise from one position to another (drag and drop). */
+export function reorderExercise(w: Workout, from: number, to: number): Workout {
+  const n = w.exercises.length;
+  if (from === to || from < 0 || to < 0 || from >= n || to >= n) return w;
+  const list = [...w.exercises];
+  const [item] = list.splice(from, 1);
+  list.splice(to, 0, item);
+  return { ...w, exercises: renumber(list) };
+}
+
 export function updateExercise(
   w: Workout,
   weId: string,

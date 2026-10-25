@@ -6,6 +6,7 @@ import { discardActive, finishActive, mutateActive, useActiveWorkout } from '../
 import type { Workout } from '../db/types';
 import ExercisePicker from '../components/ExercisePicker';
 import RunPanel from '../components/RunPanel';
+import SortableList from '../components/SortableList';
 import WorkoutExerciseCard from '../components/WorkoutExerciseCard';
 import { formatClock } from '../lib/format';
 import { useNow, useWakeLock } from '../lib/hooks';
@@ -17,6 +18,7 @@ import {
   countCompletedSets,
   countIncompleteSets,
   moveExercise,
+  reorderExercise,
   previousSets,
   removeExercise,
   removeSet,
@@ -122,9 +124,14 @@ export default function ActiveWorkout() {
       )}
 
       <div className="mt-4 space-y-4">
-        {workout.exercises.map((item, idx) => (
+        <SortableList
+          ids={workout.exercises.map((e) => e.id)}
+          onReorder={(from, to) => mutate((w) => reorderExercise(w, from, to))}
+          render={(_, idx, handle) => {
+            const item = workout.exercises[idx];
+            return (
           <WorkoutExerciseCard
-            key={item.id}
+            dragHandle={handle}
             item={item}
             exercise={exercises?.get(item.exerciseId)}
             previous={previousByExercise.get(item.exerciseId) ?? []}
@@ -140,7 +147,9 @@ export default function ActiveWorkout() {
             onRemove={() => mutate((w) => removeExercise(w, item.id))}
             onToggleSet={(set, prev) => mutate((w) => toggleSet(w, item.id, set.id, prev))}
           />
-        ))}
+            );
+          }}
+        />
       </div>
 
       {workout.exercises.length === 0 && (

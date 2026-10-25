@@ -41,3 +41,23 @@ describe('templates', () => {
     expect(workoutFromTemplate(t, 0).exercises[0].sets).toHaveLength(1);
   });
 });
+
+describe('reorderExercise', () => {
+  const three = () => addExercises(createWorkout(0, 'x'), ['a', 'b', 'c']);
+  const ids = (w: ReturnType<typeof three>) => w.exercises.map((e) => e.exerciseId);
+
+  it('moves an exercise to any position and renumbers', async () => {
+    const { reorderExercise } = await import('./workout');
+    expect(ids(reorderExercise(three(), 0, 2))).toEqual(['b', 'c', 'a']);
+    expect(ids(reorderExercise(three(), 2, 0))).toEqual(['c', 'a', 'b']);
+    expect(reorderExercise(three(), 0, 2).exercises.map((e) => e.order)).toEqual([0, 1, 2]);
+  });
+
+  it('ignores no-op and out-of-range moves', async () => {
+    const { reorderExercise } = await import('./workout');
+    const w = three();
+    expect(reorderExercise(w, 1, 1)).toBe(w);
+    expect(reorderExercise(w, 0, 3)).toBe(w);
+    expect(reorderExercise(w, -1, 1)).toBe(w);
+  });
+});

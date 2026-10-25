@@ -4,6 +4,7 @@ import type { Exercise, ExerciseType, SetType, WorkoutExercise, WorkoutSet, Zone
 import { displayName } from '../lib/exercises';
 import { formatClock, formatSet, parseClock } from '../lib/format';
 import { formatSetExtras, setPace } from '../lib/pace';
+import type { DragHandleProps } from './SortableList';
 import { formatNumber, kgToUnit, parseNumber, unitToKg, type WeightUnit } from '../lib/units';
 
 type FieldKind = 'weight' | 'reps' | 'duration' | 'distance' | 'hr' | 'rpe';
@@ -148,7 +149,10 @@ export default function WorkoutExerciseCard({
   onMove,
   onRemove,
   hideCheck = false,
+  dragHandle,
 }: {
+  /** Pointer handlers of the drag handle (drag and drop reordering). */
+  dragHandle?: DragHandleProps;
   /** Editing a finished workout: every set counts as done, so the check column is hidden. */
   hideCheck?: boolean;
   item: WorkoutExercise;
@@ -183,7 +187,16 @@ export default function WorkoutExerciseCard({
 
   return (
     <section className="rounded-xl border border-border bg-surface p-3">
-      <div className="flex items-start gap-2">
+      <div className="flex items-start gap-1">
+        {dragHandle && (
+          <button
+            aria-label="Übung verschieben, zum Sortieren ziehen"
+            className="flex min-h-11 min-w-9 cursor-grab select-none items-center justify-center rounded-lg text-xl text-neutral-500 active:cursor-grabbing"
+            {...dragHandle}
+          >
+            ⠿
+          </button>
+        )}
         {exercise ? (
           <Link to={`/exercises/${encodeURIComponent(exercise.id)}`} className="min-w-0 flex-1 py-2 font-semibold text-accent">
             {displayName(exercise)}

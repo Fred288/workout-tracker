@@ -13,11 +13,13 @@ import { formatDuration, formatSet } from '../lib/format';
 import { fromLocalInput, toLocalInput } from '../lib/history';
 import { workoutDurationMs, workoutVolume } from '../lib/stats';
 import { formatNumber, kgToUnit, useWeightUnit } from '../lib/units';
+import SortableList from '../components/SortableList';
 import { setDetail } from '../lib/pace';
 import { shiftWorkout } from '../lib/runClock';
 import {
   addCompletedSet,
   moveExercise,
+  reorderExercise,
   previousSets,
   removeExercise,
   removeSet,
@@ -152,9 +154,14 @@ export default function HistoryDetail() {
 
       {editing ? (
         <div className="space-y-4">
-          {w.exercises.map((item, idx) => (
+          <SortableList
+            ids={w.exercises.map((e) => e.id)}
+            onReorder={(from, to) => save((x) => reorderExercise(x, from, to))}
+            render={(_, idx, handle) => {
+              const item = w.exercises[idx];
+              return (
             <WorkoutExerciseCard
-              key={item.id}
+              dragHandle={handle}
               hideCheck
               item={item}
               exercise={exercises.get(item.exerciseId)}
@@ -171,7 +178,9 @@ export default function HistoryDetail() {
               onRemove={() => save((x) => removeExercise(x, item.id))}
               onToggleSet={() => {}}
             />
-          ))}
+              );
+            }}
+          />
           <textarea
             aria-label="Notiz zum Workout"
             placeholder="Notiz zum Workout"
