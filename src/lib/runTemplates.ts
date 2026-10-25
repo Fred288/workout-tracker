@@ -8,7 +8,7 @@ export type StepBlock = SessionBlock;
 
 type TemplateSet = TemplateExercise['sets'][number];
 
-const DEFAULT_ZONE: Record<StepIntensity, Zone> = {
+export const DEFAULT_ZONE: Record<StepIntensity, Zone> = {
   warmup: 1,
   recovery: 1,
   cooldown: 1,

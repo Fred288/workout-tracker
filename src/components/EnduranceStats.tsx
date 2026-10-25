@@ -1,9 +1,9 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { Bar, CartesianGrid, ComposedChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, CartesianGrid, ComposedChart, Line, LineChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/dexie';
 import { saveProfile, useProfile } from '../db/profile';
-import type { Goal, Plan, PlannedSession, Zone } from '../db/types';
+import type { Exercise, Goal, Plan, PlannedSession, Profile, Workout, Zone } from '../db/types';
 import {
   bestEffort,
   easyPaceTrend,
@@ -17,7 +17,10 @@ import {
 import { formatClock } from '../lib/format';
 import { formatNumber } from '../lib/units';
 import { GOAL_LABEL } from '../lib/plan';
-import { predictRaces, vdot } from '../lib/zones';
+import { hrZones, predictRaces, vdot } from '../lib/zones';
+import { FORM_LABEL, dailyLoads, formState, performanceChart, plannedLoad } from '../lib/load';
+import { addDays, daysBetween } from '../lib/dates';
+import { sessionStatus } from '../lib/plan';
 
 const AXIS = { fill: '#8a8a95', fontSize: 11 };
 const TOOLTIP = {
@@ -101,6 +104,15 @@ export default function EnduranceStats({
       {plan && <AdherenceCard plan={plan} sessions={sessions} done={done} today={today} />}
       <ZonesCard sets={sets} />
       <ProgressCard sets={sets} />
+      <LoadCard
+        workouts={data.workouts}
+        exercises={data.exercises}
+        profile={profile}
+        goal={goal}
+        sessions={sessions}
+        done={done}
+        today={today}
+      />
       <ForecastCard
         sets={sets}
         goal={goal}
@@ -394,3 +406,157 @@ function ForecastCard({
 }
 
 const bestVdot = (r: { distanceM: number; timeSec: number }) => vdot(r.distanceM, r.timeSec);
+
+const FATIGUE = '#c8742f';
+const GRAY = '#8a8a95';
+const HISTORY_DAYS = 90;
+const dayMs = (iso: string) => new Date(iso + 'T00:00').getTime();
+const signed = (n: number) => `${Math.round(n) > 0 ? '+' : ''}${Math.round(n)}`;
+
+/** Fitness, fatigue and form (CTL / ATL / TSB) with the plan projected to race day. */
+function LoadCard({
+  workouts,
+  exercises,
+  profile,
+  goal,
+  sessions,
+  done,
+  today,
+}: {
+  workouts: Workout[];
+  exercises: ReadonlyMap<string, Exercise>;
+  profile: Profile;
+  goal?: Goal;
+  sessions: PlannedSession[];
+  done: Map<string, string>;
+  today: string;
+}) {
+  const result = useMemo(() => {
+    const ctx = { ftpW: profile.ftpW, hrZones: hrZones(profile) };
+    const actual = dailyLoads(workouts, exercises, ctx);
+    const firstDay = [...actual.keys()].sort()[0];
+    if (!firstDay) return undefined;
+    // Start up to a year back so the averages have settled by the visible window.
+    const from = [firstDay, addDays(today, -365)].sort().at(-1)!;
+    const raceTime = goal && profile.referenceRun ? goalCheck(goal, profile.referenceRun)?.predictedSec : undefined;
+    const planned = new Map<string, number>();
+    for (const s of sessions) {
+      if (s.date <= today || sessionStatus(s, done, today) !== 'open') continue;
+      planned.set(s.date, (planned.get(s.date) ?? 0) + plannedLoad(s, { goalType: goal?.type, raceTimeSec: raceTime }));
+    }
+    const end = goal && goal.targetDate > today && planned.size ? goal.targetDate : today;
+    const pmc = performanceChart(actual, from, end, today, planned);
+    const visibleFrom = addDays(today, -HISTORY_DAYS);
+    const rows = pmc
+      .filter((d) => d.date >= visibleFrom)
+      .map((d, i, all) => {
+        // The projected line starts at today's value so both parts connect.
+        const edge = !d.projected && !!all[i + 1]?.projected;
+        return {
+          at: dayMs(d.date),
+          ctl: d.projected ? undefined : d.ctl,
+          atl: d.projected ? undefined : d.atl,
+          tsb: d.projected ? undefined : d.tsb,
+          ctlP: d.projected || edge ? d.ctl : undefined,
+          atlP: d.projected || edge ? d.atl : undefined,
+          tsbP: d.projected || edge ? d.tsb : undefined,
+        };
+      });
+    const now = pmc.find((d) => d.date === today) ?? pmc.at(-1)!;
+    const race = goal ? pmc.find((d) => d.date === goal.targetDate && d.projected) : undefined;
+    return { rows, now, race, historyDays: daysBetween(from, today) + 1, projected: end > today };
+  }, [workouts, exercises, profile, goal, sessions, done, today]);
+
+  if (!result) return null;
+  const { rows, now, race, historyDays, projected } = result;
+  const todayMs = dayMs(today);
+  const xAxis = (
+    <XAxis dataKey="at" type="number" scale="time" domain={['dataMin', 'dataMax']} tickFormatter={(ms) => shortDate(ms)} tick={AXIS} tickLine={false} axisLine={false} />
+  );
+  const tooltip = <Tooltip {...TOOLTIP} labelFormatter={(l) => shortDate(Number(l))} formatter={(v, name) => [Math.round(Number(v)), String(name)]} />;
+
+  return (
+    <section className="rounded-xl border border-border bg-surface p-4 lg:col-span-2">
+      <h2 className="font-semibold">Belastung</h2>
+      <p className="mb-2 text-xs text-neutral-500">
+        Belastungspunkte aus Dauer und Intensität (Watt, Puls, Zone oder RPE). Fitness = Schnitt über 42 Tage, Ermüdung = über 7 Tage,
+        Form = Fitness minus Ermüdung vom Vortag. Schätzung, keine Messung.
+      </p>
+      <dl className="grid grid-cols-2 gap-2 text-sm md:grid-cols-4">
+        <div className="rounded-lg bg-bg p-3">
+          <dt className="text-neutral-400">Fitness</dt>
+          <dd className="text-2xl font-bold tabular-nums">{Math.round(now.ctl)}</dd>
+        </div>
+        <div className="rounded-lg bg-bg p-3">
+          <dt className="text-neutral-400">Ermüdung</dt>
+          <dd className="text-2xl font-bold tabular-nums">{Math.round(now.atl)}</dd>
+        </div>
+        <div className="rounded-lg bg-bg p-3">
+          <dt className="text-neutral-400">Form heute</dt>
+          <dd className="text-2xl font-bold tabular-nums">{signed(now.tsb)}</dd>
+          <dd className="text-xs text-neutral-400">{FORM_LABEL[formState(now.tsb)]}</dd>
+        </div>
+        <div className="rounded-lg bg-bg p-3">
+          <dt className="text-neutral-400">Form am Renntag</dt>
+          <dd className="text-2xl font-bold tabular-nums">{race ? signed(race.tsb) : '–'}</dd>
+          <dd className="text-xs text-neutral-400">{race ? `${FORM_LABEL[formState(race.tsb)]} (Prognose nach Plan)` : 'Braucht Ziel und Plan'}</dd>
+        </div>
+      </dl>
+      {historyDays < 42 && (
+        <p className="mt-2 text-xs text-amber-300">
+          Erst {historyDays} {historyDays === 1 ? 'Tag' : 'Tage'} Daten: Fitness und Form brauchen etwa sechs Wochen, bis sie aussagekräftig sind.
+        </p>
+      )}
+
+      <h3 className="mt-4 text-sm text-neutral-400">Fitness und Ermüdung</h3>
+      <div className="h-52" role="img" aria-label="Fitness und Ermüdung pro Tag, gestrichelt die Prognose nach Plan">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+            <CartesianGrid stroke="var(--color-border)" vertical={false} />
+            {xAxis}
+            <YAxis tick={AXIS} tickLine={false} axisLine={false} width={36} allowDecimals={false} />
+            {tooltip}
+            {projected && <ReferenceLine x={todayMs} stroke={GRAY} strokeDasharray="2 3" />}
+            <Line dataKey="ctl" name="Fitness" stroke={ACCENT} strokeWidth={2} dot={false} isAnimationActive={false} />
+            <Line dataKey="atl" name="Ermüdung" stroke={FATIGUE} strokeWidth={2} dot={false} isAnimationActive={false} />
+            <Line dataKey="ctlP" name="Fitness (Plan)" stroke={ACCENT} strokeWidth={2} strokeDasharray="4 3" dot={false} isAnimationActive={false} />
+            <Line dataKey="atlP" name="Ermüdung (Plan)" stroke={FATIGUE} strokeWidth={2} strokeDasharray="4 3" dot={false} isAnimationActive={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <Legend
+        items={[
+          { color: ACCENT, label: 'Fitness' },
+          { color: FATIGUE, label: 'Ermüdung' },
+          ...(projected ? [{ color: GRAY, label: 'Prognose nach Plan', dashed: true }] : []),
+        ]}
+      />
+
+      <h3 className="mt-4 text-sm text-neutral-400">Form</h3>
+      <div className="h-40" role="img" aria-label="Form pro Tag; das helle Band zeigt den Bereich für Wettkampfform">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+            <CartesianGrid stroke="var(--color-border)" vertical={false} />
+            {xAxis}
+            <YAxis
+              tick={AXIS}
+              tickLine={false}
+              axisLine={false}
+              width={36}
+              allowDecimals={false}
+              // Always show the race-ready band and some room below zero.
+              domain={[(min: number) => Math.min(Math.floor(min / 10) * 10, -10), (max: number) => Math.max(Math.ceil(max / 10) * 10, 30)]}
+            />
+            <ReferenceArea y1={5} y2={25} fill={ACCENT} fillOpacity={0.1} />
+            <ReferenceLine y={0} stroke={GRAY} />
+            {projected && <ReferenceLine x={todayMs} stroke={GRAY} strokeDasharray="2 3" />}
+            {tooltip}
+            <Line dataKey="tsb" name="Form" stroke={ACCENT} strokeWidth={2} dot={false} isAnimationActive={false} />
+            <Line dataKey="tsbP" name="Form (Plan)" stroke={ACCENT} strokeWidth={2} strokeDasharray="4 3" dot={false} isAnimationActive={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <p className="mt-1 text-xs text-neutral-500">Helles Band: +5 bis +25, grob die Form, mit der man in einen Wettkampf gehen möchte.</p>
+    </section>
+  );
+}
