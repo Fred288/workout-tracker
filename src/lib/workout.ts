@@ -183,8 +183,10 @@ export function templateFromWorkout(w: Workout, name: string): Template {
           weightKg: s.weightKg,
           durationSec: s.durationSec,
           distanceM: s.distanceM,
+          zone: s.zone,
         })),
       })),
+    ...(w.sport ? { sport: w.sport } : {}),
   };
 }
 
@@ -195,6 +197,7 @@ export function workoutFromTemplate(t: Template, now: number): Workout {
     name: t.name,
     startedAt: now,
     templateId: t.id,
+    ...(t.sport ? { sport: t.sport } : {}),
     exercises: t.exercises.map((e, i) => ({
       id: newId(),
       exerciseId: e.exerciseId,

@@ -75,12 +75,13 @@ export interface Workout {
 }
 
 export interface TemplateExercise extends Omit<WorkoutExercise, 'sets'> {
-  sets: { type: SetType; reps?: number; weightKg?: number; durationSec?: number; distanceM?: number }[];
+  sets: { type: SetType; reps?: number; weightKg?: number; durationSec?: number; distanceM?: number; zone?: Zone }[];
 }
 
 export interface Template {
   id: string;
   name: string;
+  sport?: WorkoutSport;
   exercises: TemplateExercise[];
 }
 
