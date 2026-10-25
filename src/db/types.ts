@@ -111,7 +111,7 @@ export interface Profile {
   thresholdHr?: number;
   ftpW?: number;
   /** One recent race or hard time trial; all running paces derive from it (Runna style). */
-  referenceRun?: { distanceM: number; timeSec: number };
+  referenceRun?: { distanceM: number; timeSec: number; /** when it was set; pace patterns only count runs after it */ setAt?: number };
 }
 
 export type GoalType = '5k' | '10k' | 'half' | 'marathon' | 'sprint' | 'olympic' | '70.3' | 'ironman';

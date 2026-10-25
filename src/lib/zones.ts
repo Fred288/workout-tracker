@@ -53,15 +53,45 @@ export interface PaceRange {
  * The five app zones as pace ranges. Z1 recovery/easy jog, Z2 easy, Z3 steady (marathon
  * feel), Z4 threshold, Z5 intervals (about 5 km pace and faster).
  */
+/** Share of VDOT at the slow and fast end of each zone. */
+export const ZONE_FRACTIONS: Record<Zone, [number, number]> = {
+  1: [0.5, 0.62],
+  2: [0.62, 0.74],
+  3: [0.74, 0.84],
+  4: [0.84, 0.92],
+  5: [0.92, 1.0],
+};
+
 export function paceZones(vdotValue: number): Record<Zone, PaceRange> {
-  const p = (f: number) => paceAtFraction(vdotValue, f);
-  return {
-    1: { slow: p(0.5), fast: p(0.62) },
-    2: { slow: p(0.62), fast: p(0.74) },
-    3: { slow: p(0.74), fast: p(0.84) },
-    4: { slow: p(0.84), fast: p(0.92) },
-    5: { slow: p(0.92), fast: p(1.0) },
-  };
+  const range = (z: Zone): PaceRange => ({
+    slow: paceAtFraction(vdotValue, ZONE_FRACTIONS[z][0]),
+    fast: paceAtFraction(vdotValue, ZONE_FRACTIONS[z][1]),
+  });
+  return { 1: range(1), 2: range(2), 3: range(3), 4: range(4), 5: range(5) };
+}
+
+/** Inverse of paceAtFraction: the VDOT at which `fraction` of it gives this pace. */
+export function vdotForPace(paceSecPerKm: number, fraction: number): number {
+  let lo = 10;
+  let hi = 100;
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    if (paceAtFraction(mid, fraction) > paceSecPerKm) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+/** Time over `distanceM` that has the given VDOT (inverse of vdot()). */
+export function timeForVdot(distanceM: number, target: number): number {
+  let lo = distanceM / 10; // 10 m/s, faster than any human
+  let hi = distanceM; // 1 m/s
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    if ((vdot(distanceM, mid) ?? 0) > target) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
 }
 
 export interface Prediction {

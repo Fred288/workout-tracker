@@ -4,6 +4,9 @@ import { db } from './dexie';
 import { finishActive, getActiveWorkout, mutateActive } from './activeWorkout';
 import {
   addPlannedSession,
+  applyReschedule,
+  moveRace,
+  startBreak,
   createGoalWithPlan,
   deleteGoal,
   deleteSession,
@@ -145,5 +148,55 @@ describe('generatePlanSessions', () => {
     // New sessions use the new run days.
     const future = after.filter((s) => s.date > '2026-11-01' && s.kind !== 'race');
     expect(future.every((s) => [0, 2, 6].includes((new Date(s.date + 'T12:00').getDay() + 6) % 7))).toBe(true);
+  });
+});
+
+describe('adaptation', () => {
+  const settings = { runDays: [1, 3, 6] as (0 | 1 | 2 | 3 | 4 | 5 | 6)[], longRunDay: 6 as const, level: 'beginner' as const, baselineLongRunMin: 60 };
+
+  it('applyReschedule moves the session, clears skipped and skips the replaced easy run', async () => {
+    const { planId } = await setup();
+    const long = await addPlannedSession(planId, '2026-10-25', preset('long'));
+    const easy = await addPlannedSession(planId, '2026-10-27', preset('easy'));
+    await setSessionSkipped(long, true);
+    await applyReschedule([{ sessionId: long, toDate: '2026-10-27', replacesId: easy }]);
+    const moved = (await db.plannedSessions.get(long))!;
+    expect(moved).toMatchObject({ date: '2026-10-27', weekIndex: 1 });
+    expect(moved).not.toHaveProperty('skippedAt');
+    expect((await db.plannedSessions.get(easy))!.skippedAt).toBeDefined();
+  });
+
+  it('startBreak skips the break days and restarts the plan gentler afterwards', async () => {
+    const { planId } = await setup();
+    await generatePlanSessions(planId, settings, '2026-10-26');
+    await startBreak(planId, '2026-11-02', 10); // back on 2026-11-12
+    const all = await db.plannedSessions.where('planId').equals(planId).toArray();
+    const inBreak = all.filter((s) => s.date >= '2026-11-02' && s.date < '2026-11-12');
+    expect(inBreak.length).toBeGreaterThan(0);
+    expect(inBreak.every((s) => s.skippedAt !== undefined)).toBe(true);
+    const after = all.filter((s) => s.date >= '2026-11-12' && s.kind === 'long').sort((a, b) => a.date.localeCompare(b.date));
+    const firstLong = after[0].blocks![0].steps.reduce((n, st) => n + (st.durationSec ?? 0), 0) / 60;
+    // Last long run before the break was the 60-65 min of week 1; two started weeks off -> -20 %.
+    expect(firstLong).toBeLessThanOrEqual(55);
+    expect((await db.plans.get(planId))!.baselineLongRunMin).toBeLessThan(60);
+  });
+
+  it('startBreak on a hand-made plan only skips sessions', async () => {
+    const { planId } = await setup();
+    const a = await addPlannedSession(planId, '2026-10-27', preset('easy'));
+    const b = await addPlannedSession(planId, '2026-11-20', preset('easy'));
+    expect(await startBreak(planId, '2026-10-26', 7)).toEqual([]);
+    expect((await db.plannedSessions.get(a))!.skippedAt).toBeDefined();
+    expect((await db.plannedSessions.get(b))!.skippedAt).toBeUndefined();
+  });
+
+  it('moveRace changes the date and rebuilds a generated plan to the new race day', async () => {
+    const { goalId, planId } = await setup();
+    await generatePlanSessions(planId, settings, '2026-10-26');
+    await moveRace(goalId, '2027-05-09', '2026-11-02');
+    expect((await db.goals.get(goalId))!.targetDate).toBe('2027-05-09');
+    const sessions = await db.plannedSessions.where('planId').equals(planId).toArray();
+    expect(sessions.filter((s) => s.kind === 'race').map((s) => s.date)).toEqual(['2027-05-09']);
+    expect((await db.plans.get(planId))!.weeks.at(-1)!.phase).toBe('race');
   });
 });

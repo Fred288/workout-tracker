@@ -3,7 +3,8 @@ import { startWorkout } from './activeWorkout';
 import type { Goal, GoalPriority, GoalType, Level, PlannedSession, Weekday } from './types';
 import { buildWeeks, newPlan, weekIndexOf, workoutFromSession } from '../lib/plan';
 import { newId } from '../lib/id';
-import { mondayOf } from '../lib/dates';
+import { addDays, mondayOf } from '../lib/dates';
+import { baselineAfterBreak, currentLongRunMin, planSettings, type RescheduleSuggestion } from '../lib/adapt';
 import type { RunPreset } from '../lib/runTemplates';
 import { generatePlan } from '../lib/planGenerator';
 
@@ -156,4 +157,53 @@ export async function startPlannedSession(id: string, now = Date.now()): Promise
   const s = await db.plannedSessions.get(id);
   if (!s) throw new Error('Einheit nicht gefunden.');
   await startWorkout(workoutFromSession(s, now));
+}
+
+/** Moves missed key sessions as suggested; easy runs that give way are marked skipped. */
+export async function applyReschedule(suggestions: RescheduleSuggestion[]): Promise<void> {
+  await db.transaction('rw', db.plans, db.plannedSessions, async () => {
+    for (const x of suggestions) {
+      const s = await db.plannedSessions.get(x.sessionId);
+      const plan = s && (await db.plans.get(s.planId));
+      if (!s || !plan) continue;
+      const { skippedAt: _, ...rest } = s;
+      await db.plannedSessions.put({ ...rest, date: x.toDate, weekIndex: weekIndexOf(plan, x.toDate) });
+      if (x.replacesId) {
+        const easy = await db.plannedSessions.get(x.replacesId);
+        if (easy) await db.plannedSessions.put({ ...easy, skippedAt: Date.now() });
+      }
+    }
+  });
+}
+
+/**
+ * "Not 100 %": skips the open sessions of the next `days` days and, if the plan was generated,
+ * rebuilds it from the day after the break with a reduced long run. Returns generator warnings.
+ */
+export async function startBreak(planId: string, today: string, days: number): Promise<string[]> {
+  const back = addDays(today, days);
+  const plan = await db.plans.get(planId);
+  if (!plan) throw new Error('Plan nicht gefunden.');
+  const sessions = await db.plannedSessions.where('planId').equals(planId).toArray();
+  const linked = new Set(
+    (await db.workouts.where('plannedSessionId').anyOf(sessions.map((s) => s.id)).toArray()).map((w) => w.plannedSessionId!),
+  );
+  const now = Date.now();
+  await db.plannedSessions.bulkPut(
+    sessions.filter((s) => s.date >= today && s.date < back && !linked.has(s.id) && s.skippedAt === undefined).map((s) => ({ ...s, skippedAt: now })),
+  );
+  const settings = planSettings(plan);
+  if (!settings) return [];
+  const long = currentLongRunMin(sessions, today, settings.baselineLongRunMin);
+  return generatePlanSessions(planId, { ...settings, baselineLongRunMin: baselineAfterBreak(long, days) }, back);
+}
+
+/** Moves the race and, for a generated plan, rebuilds it from today where the plan stands now. */
+export async function moveRace(goalId: string, targetDate: string, today: string): Promise<string[]> {
+  await updateGoal(goalId, { targetDate });
+  const plan = await db.plans.where('goalId').equals(goalId).first();
+  const settings = plan && planSettings(plan);
+  if (!plan || !settings) return [];
+  const sessions = await db.plannedSessions.where('planId').equals(plan.id).toArray();
+  return generatePlanSessions(plan.id, { ...settings, baselineLongRunMin: currentLongRunMin(sessions, today, settings.baselineLongRunMin) }, today);
 }

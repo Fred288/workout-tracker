@@ -117,7 +117,7 @@ export default function EnduranceStats({
         sets={sets}
         goal={goal}
         reference={profile.referenceRun}
-        onAdopt={(r) => void saveProfile({ referenceRun: r })}
+        onAdopt={(r) => void saveProfile({ referenceRun: { ...r, setAt: Date.now() } })}
       />
     </div>
   );

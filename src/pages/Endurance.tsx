@@ -19,6 +19,7 @@ import {
   moveSession,
   setSessionSkipped,
   startPlannedSession,
+  moveRace,
   updateGoal,
 } from '../db/plans';
 import type { Goal, GoalType, Level, Plan, PlannedSession, Weekday } from '../db/types';
@@ -423,6 +424,7 @@ function GoalEdit({ goal, today, onDone }: { goal: Goal; today: string; onDone: 
       <label className="block text-sm text-neutral-400">
         Zieldatum
         <input type="date" className={`${input} mt-1 block w-full text-neutral-100`} value={date} onChange={(e) => setDate(e.target.value)} />
+        {date !== goal.targetDate && <span className="mt-1 block text-xs text-neutral-500">Ein erstellter Plan wird ab heute auf das neue Datum verteilt, erledigte Einheiten bleiben.</span>}
       </label>
       <label className="block text-sm text-neutral-400">
         Zielzeit (h:mm:ss)
@@ -433,7 +435,9 @@ function GoalEdit({ goal, today, onDone }: { goal: Goal; today: string; onDone: 
           className="min-h-11 flex-1 rounded-lg bg-accent font-semibold text-white disabled:opacity-50"
           disabled={!valid}
           onClick={async () => {
-            await updateGoal(goal.id, { targetDate: date, targetTimeSec: time.trim() ? timeSec : undefined });
+            await updateGoal(goal.id, { targetTimeSec: time.trim() ? timeSec : undefined });
+            // A new race date rebuilds a generated plan from today on.
+            if (date !== goal.targetDate) await moveRace(goal.id, date, today);
             onDone();
           }}
         >

@@ -65,7 +65,7 @@ function Content({ profile, save }: { profile: Profile; save: (patch: Partial<Om
   const commitRef = (d: number, t: string) => {
     const sec = parseClock(t);
     if (!t.trim()) save({ referenceRun: undefined });
-    else if (sec) save({ referenceRun: { distanceM: d, timeSec: sec } });
+    else if (sec && (sec !== ref?.timeSec || d !== ref?.distanceM)) save({ referenceRun: { distanceM: d, timeSec: sec, setAt: Date.now() } });
   };
 
   const pace = profilePaceZones(profile);

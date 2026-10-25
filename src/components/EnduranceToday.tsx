@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
+import AdaptCards from './AdaptCards';
 import { useActiveWorkout } from '../db/activeWorkout';
 import { db } from '../db/dexie';
 import { startPlannedSession } from '../db/plans';
@@ -39,7 +40,7 @@ export default function EnduranceToday({
   const navigate = useNavigate();
   const active = useActiveWorkout();
   const workouts = useLiveQuery(async () => {
-    const list = await db.workouts.filter((w) => !!w.finishedAt && w.startedAt > Date.now() - 14 * 86_400_000).toArray();
+    const list = await db.workouts.filter((w) => !!w.finishedAt && w.startedAt > Date.now() - 42 * 86_400_000).toArray();
     const ids = [...new Set(list.flatMap((w) => w.exercises.map((e) => e.exerciseId)))];
     const ex = await db.exercises.bulkGet(ids);
     return runSets(list, new Map(ex.filter((e) => !!e).map((e) => [e!.id, e!])));
@@ -119,6 +120,8 @@ export default function EnduranceToday({
           </div>
         )}
       </section>
+
+      <AdaptCards plan={plan} goal={goal} sessions={sessions} done={done} today={today} sets={workouts ?? []} />
 
       <section className="rounded-xl border border-border bg-surface p-4 md:col-span-2">
         <div className="text-sm text-neutral-400">Diese Woche</div>
