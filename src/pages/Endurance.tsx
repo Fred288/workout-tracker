@@ -26,7 +26,8 @@ import type { Goal, GoalType, Level, Plan, PlannedSession, Weekday } from '../db
 import { WEEKDAYS_SHORT, addDays, daysBetween, formatDay, isIsoDate, parseIso, toIso } from '../lib/dates';
 import { formatClock, parseClock } from '../lib/format';
 import { GOAL_LABEL, RUN_GOALS, planProgress, sessionStatus, sessionsOfWeek, weekIndexOf, type SessionStatus } from '../lib/plan';
-import { RUN_PRESETS } from '../lib/runTemplates';
+import { PRESET_GROUPS } from '../lib/endurancePresets';
+import { SPORT_LABEL } from '../lib/sports';
 
 const PHASE_LABEL = { base: 'Grundlage', build: 'Aufbau', peak: 'Spitze', taper: 'Tapering', race: 'Wettkampfwoche' } as const;
 const STATUS_LABEL: Record<SessionStatus, string> = { done: 'Erledigt', skipped: 'Übersprungen', missed: 'Verpasst', open: 'Geplant' };
@@ -326,18 +327,23 @@ function DayCard({
       </div>
       {adding && (
         <div className="mb-2 grid gap-1">
-          {RUN_PRESETS.map((p) => (
-            <button
-              key={p.id}
-              className="min-h-11 rounded-lg bg-border px-3 text-left text-sm"
-              onClick={async () => {
-                await addPlannedSession(plan.id, date, p);
-                setAdding(false);
-              }}
-            >
-              <span className="font-medium">{p.name}</span>
-              <span className="block text-xs text-neutral-400">{p.description}</span>
-            </button>
+          {PRESET_GROUPS.map((g) => (
+            <div key={g.sport} className="grid gap-1">
+              <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">{SPORT_LABEL[g.sport]}</div>
+              {g.presets.map((p) => (
+                <button
+                  key={p.id}
+                  className="min-h-11 rounded-lg bg-border px-3 text-left text-sm"
+                  onClick={async () => {
+                    await addPlannedSession(plan.id, date, p);
+                    setAdding(false);
+                  }}
+                >
+                  <span className="font-medium">{p.name}</span>
+                  <span className="block text-xs text-neutral-400">{p.description}</span>
+                </button>
+              ))}
+            </div>
           ))}
         </div>
       )}

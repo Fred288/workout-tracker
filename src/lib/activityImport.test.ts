@@ -23,10 +23,10 @@ const act = (over: Partial<ParsedActivity> = {}): ParsedActivity & { sport: 'run
 }) as ParsedActivity & { sport: 'run' | 'bike' };
 
 describe('isImportable', () => {
-  it('accepts running and cycling with a duration only', () => {
+  it('accepts running, cycling and swimming with a duration only', () => {
     expect(isImportable(act())).toBe(true);
     expect(isImportable(act({ sport: 'bike' }))).toBe(true);
-    expect(isImportable(act({ sport: 'swim' }))).toBe(false);
+    expect(isImportable(act({ sport: 'swim' }))).toBe(true);
     expect(isImportable(act({ sport: 'other' }))).toBe(false);
     expect(isImportable(act({ durationSec: 0 }))).toBe(false);
   });

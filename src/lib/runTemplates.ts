@@ -1,5 +1,4 @@
-import type { SessionBlock, SessionKind, StepIntensity, Template, TemplateExercise, Zone } from '../db/types';
-import { newId } from './id';
+import type { SessionBlock, SessionKind, StepIntensity, TemplateExercise, Zone } from '../db/types';
 
 /** Library exercise the built-in run templates use. */
 export const RUN_EXERCISE_ID = 'Running';
@@ -116,13 +115,3 @@ export const RUN_PRESETS: RunPreset[] = [
     ],
   },
 ];
-
-/** Builds a (not persisted) Template from a preset; start it with workoutFromTemplate. */
-export function templateFromPreset(p: RunPreset): Template {
-  return {
-    id: newId(),
-    name: p.name,
-    sport: 'run',
-    exercises: [{ id: newId(), exerciseId: RUN_EXERCISE_ID, order: 0, sets: blocksToSets(p.blocks) }],
-  };
-}

@@ -114,6 +114,7 @@ export default function ActiveWorkout() {
         <div className="mt-4">
           <RunPanel
             workout={workout}
+            sports={new Map(workout.exercises.map((e) => [e.id, exercises?.get(e.exerciseId)?.sport ?? 'run']))}
             now={now}
             onMutate={mutate}
             onNext={(d) => mutate((w) => completeStep(w, Date.now(), d))}

@@ -26,7 +26,7 @@ export function formatDuration(ms: number): string {
 }
 
 /** Short text for a set, e.g. "60 kg × 8", "+10 kg × 8", "12 Wdh.", "1:30", "2,5 km · 12:00". */
-export function formatSet(s: WorkoutSet, type: ExerciseType, unit: WeightUnit): string {
+export function formatSet(s: WorkoutSet, type: ExerciseType, unit: WeightUnit, sport?: string): string {
   const w = (kg: number) => `${formatNumber(kgToUnit(kg, unit))} ${unit}`;
   switch (type) {
     case 'weight_reps':
@@ -45,7 +45,7 @@ export function formatSet(s: WorkoutSet, type: ExerciseType, unit: WeightUnit): 
       return s.durationSec !== undefined ? formatClock(s.durationSec) : '–';
     case 'distance_duration': {
       const parts = [
-        s.distanceM !== undefined ? `${formatNumber(s.distanceM / 1000)} km` : '',
+        s.distanceM !== undefined ? (sport === 'swim' ? `${Math.round(s.distanceM)} m` : `${formatNumber(s.distanceM / 1000)} km`) : '',
         s.durationSec !== undefined ? formatClock(s.durationSec) : '',
       ].filter(Boolean);
       return parts.join(' · ') || '–';

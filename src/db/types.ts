@@ -174,6 +174,12 @@ export interface SessionBlock {
   steps: SessionStep[];
 }
 
+/** One exercise of a session; a brick session has two (bike, then run). */
+export interface SessionPart {
+  sport: Sport;
+  blocks: SessionBlock[];
+}
+
 export interface PlannedSession {
   id: string;
   planId: string;
@@ -186,6 +192,8 @@ export interface PlannedSession {
   targetDistanceM?: number;
   zone?: Zone;
   blocks?: SessionBlock[];
+  /** Several exercises (brick); when set, `blocks` is not used. */
+  parts?: SessionPart[];
   /** Only "skipped" is stored; "done" = a workout with this plannedSessionId exists. */
   skippedAt?: number;
 }

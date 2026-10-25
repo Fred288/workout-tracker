@@ -16,7 +16,7 @@ type SortKey = 'recent' | 'name' | 'weight' | 'reps';
 /** Main record for the "Bestwert" column, depending on the exercise type. */
 function bestText(row: ExerciseRecordRow, ex: Exercise, unit: 'kg' | 'lb'): string {
   if (ex.type === 'duration') return row.longestDuration ? formatClock(row.longestDuration) : '–';
-  if (ex.type === 'distance_duration') return row.longestDistance ? `${formatNumber(row.longestDistance / 1000)} km` : '–';
+  if (ex.type === 'distance_duration') return row.longestDistance ? (ex.sport === 'swim' ? `${Math.round(row.longestDistance)} m` : `${formatNumber(row.longestDistance / 1000)} km`) : '–';
   if (ex.type === 'assisted_bodyweight') return row.leastAssistance !== undefined ? `−${weightText(row.leastAssistance, unit)}` : '–';
   return row.maxWeight ? weightText(row.maxWeight, unit) : '–';
 }

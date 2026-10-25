@@ -2,6 +2,7 @@ import type { Exercise, Goal, GoalType, PlannedSession, Workout, WorkoutSet, Zon
 import { addDays, daysBetween } from './dates';
 import { sessionStatus } from './plan';
 import { startOfWeek } from './profile';
+import { partsOf, blocksSeconds } from './sports';
 import { RACE_DISTANCES, predictRaces, vdot } from './zones';
 
 // Dashboard numbers for running. Everything is derived from the logged sets and the plan,
@@ -53,18 +54,10 @@ export function weeklyRunVolume(sets: RunSet[], now: number, weeks = 12): WeekVo
   return rows.map(({ ids, ...x }) => ({ ...x, runs: ids.size }));
 }
 
-const DEFAULT_PACE_SEC_PER_KM = 360;
-
 /** Planned time of a session from its blocks; distance-only steps count at 6:00 per km. */
-export function plannedSeconds(s: Pick<PlannedSession, 'blocks' | 'kind'>): number {
+export function plannedSeconds(s: Pick<PlannedSession, 'blocks' | 'kind'> & Partial<Pick<PlannedSession, 'parts' | 'sport'>>): number {
   if (s.kind === 'race') return 0;
-  return (s.blocks ?? []).reduce(
-    (n, b) =>
-      n +
-      b.repeat *
-        b.steps.reduce((m, st) => m + (st.durationSec ?? ((st.distanceM ?? 0) / 1000) * DEFAULT_PACE_SEC_PER_KM), 0),
-    0,
-  );
+  return partsOf(s).reduce((n, p) => n + blocksSeconds(p.sport, p.blocks), 0);
 }
 
 export interface WeekAdherence {

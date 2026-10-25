@@ -60,7 +60,7 @@ export default function ActivityImport({ sessions, done }: { sessions: PlannedSe
     try {
       const zones = hrZones(profile);
       const workouts = chosen.map((e) => {
-        const a = e.activity as ParsedActivity & { sport: 'run' | 'bike' };
+        const a = e.activity as ParsedActivity & { sport: 'run' | 'bike' | 'swim' };
         const linked = sessions.find((s) => s.id === e.sessionId);
         return activityToWorkout(a, { useLaps: e.useLaps, hrZones: zones, plannedSessionId: e.sessionId || undefined, name: linked?.title });
       });
@@ -141,14 +141,14 @@ function EntryCard({ entry: e, sessions, done, onChange }: { entry: Entry; sessi
             {a.sportGuessed ? ' (geschätzt)' : ''} · {when}
           </span>
           <span className="block tabular-nums text-neutral-300">
-            {a.distanceM > 0 ? `${formatNumber(Math.round(a.distanceM / 10) / 100)} km · ` : ''}
+            {a.distanceM > 0 ? (a.sport === 'swim' ? `${Math.round(a.distanceM)} m · ` : `${formatNumber(Math.round(a.distanceM / 10) / 100)} km · `) : ''}
             {formatClock(a.durationSec)}
             {a.avgHr ? ` · Ø ${a.avgHr} bpm` : ''}
             {a.avgPowerW ? ` · Ø ${a.avgPowerW} W` : ''}
           </span>
         </span>
       </label>
-      {!ok && <p className="mt-1 text-amber-300">{a.sport === 'swim' ? 'Schwimmen wird noch nicht importiert.' : 'Nur Laufen und Radfahren werden importiert.'}</p>}
+      {!ok && <p className="mt-1 text-amber-300">Nur Laufen, Radfahren und Schwimmen werden importiert.</p>}
       {ok && a.laps.length > 1 && (
         <label className="mt-1 flex min-h-11 items-center gap-3">
           <input type="checkbox" className="h-5 w-5" checked={e.useLaps} onChange={(ev) => onChange({ useLaps: ev.target.checked })} />
@@ -162,7 +162,7 @@ function EntryCard({ entry: e, sessions, done, onChange }: { entry: Entry; sessi
             <option value="">Nicht verknüpfen</option>
             {options.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.title ?? SPORT_NAME[a.sport as 'run' | 'bike']}
+                {s.title ?? SPORT_NAME[a.sport as 'run' | 'bike' | 'swim']}
               </option>
             ))}
           </select>

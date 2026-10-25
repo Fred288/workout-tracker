@@ -2,15 +2,15 @@ import type { PlannedSession, Workout, WorkoutSet } from '../db/types';
 import type { ParsedActivity } from './activityFiles';
 import { toIso } from './dates';
 import { sessionStatus } from './plan';
+import { SPORT_EXERCISE } from './sports';
 import { zoneFromHr, type HrZones } from './zones';
 
-/** Library exercises imported activities are filed under. Swimming follows with the triathlon phase. */
-export const SPORT_EXERCISE = { run: 'Running', bike: 'Bicycling' } as const;
+export const SPORT_NAME = { run: 'Lauf', bike: 'Radfahren', swim: 'Schwimmen' } as const;
 
-export const SPORT_NAME = { run: 'Lauf', bike: 'Radfahren' } as const;
+type ImportedSport = keyof typeof SPORT_NAME;
 
-export function isImportable(a: ParsedActivity): a is ParsedActivity & { sport: 'run' | 'bike' } {
-  return (a.sport === 'run' || a.sport === 'bike') && a.durationSec > 0;
+export function isImportable(a: ParsedActivity): a is ParsedActivity & { sport: ImportedSport } {
+  return (a.sport === 'run' || a.sport === 'bike' || a.sport === 'swim') && a.durationSec > 0;
 }
 
 /** Stable id: importing the same file twice never creates a second workout. */
@@ -38,7 +38,7 @@ export interface ImportOptions {
   name?: string;
 }
 
-export function activityToWorkout(a: ParsedActivity & { sport: 'run' | 'bike' }, opts: ImportOptions): Workout {
+export function activityToWorkout(a: ParsedActivity & { sport: ImportedSport }, opts: ImportOptions): Workout {
   const id = activityId(a);
   const parts = opts.useLaps && a.laps.length > 1 ? a.laps : [a];
   const sets: WorkoutSet[] = parts.map((p, i) => ({

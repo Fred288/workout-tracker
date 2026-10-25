@@ -5,7 +5,7 @@ import { buildWeeks, newPlan, weekIndexOf, workoutFromSession } from '../lib/pla
 import { newId } from '../lib/id';
 import { addDays, mondayOf } from '../lib/dates';
 import { baselineAfterBreak, currentLongRunMin, planSettings, type RescheduleSuggestion } from '../lib/adapt';
-import type { RunPreset } from '../lib/runTemplates';
+import type { Preset } from '../lib/endurancePresets';
 import { generatePlan } from '../lib/planGenerator';
 
 export interface GoalInput {
@@ -54,7 +54,7 @@ export async function deleteGoal(goalId: string): Promise<void> {
   });
 }
 
-export async function addPlannedSession(planId: string, date: string, preset: RunPreset): Promise<string> {
+export async function addPlannedSession(planId: string, date: string, preset: Preset): Promise<string> {
   const plan = await db.plans.get(planId);
   if (!plan) throw new Error('Plan nicht gefunden.');
   const s: PlannedSession = {
@@ -62,10 +62,10 @@ export async function addPlannedSession(planId: string, date: string, preset: Ru
     planId,
     weekIndex: weekIndexOf(plan, date),
     date,
-    sport: 'run',
+    sport: preset.sport,
     kind: preset.kind,
     title: preset.name,
-    blocks: preset.blocks,
+    ...(preset.parts.length > 1 ? { parts: preset.parts } : { blocks: preset.parts[0].blocks }),
   };
   await db.plannedSessions.add(s);
   return s.id;

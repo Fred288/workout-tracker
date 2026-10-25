@@ -35,7 +35,7 @@ export const BADGE_LABELS: Record<RecordKind, string> = {
 export const weightText = (kg: number, unit: WeightUnit) => `${formatNumber(kgToUnit(kg, unit))} ${unit}`;
 
 /** Main value of a record, e.g. "100 kg", "15 Wdh.", "1:35". */
-export function recordValueText(kind: RecordKind, r: RecordValue, type: ExerciseType, unit: WeightUnit): string {
+export function recordValueText(kind: RecordKind, r: RecordValue, type: ExerciseType, unit: WeightUnit, sport?: string): string {
   switch (kind) {
     case 'maxWeight':
     case 'best1RM':
@@ -44,10 +44,10 @@ export function recordValueText(kind: RecordKind, r: RecordValue, type: Exercise
     case 'maxReps':
       return `${r.value} Wdh.`;
     case 'bestSetVolume':
-      return formatSet(r.set, type, unit);
+      return formatSet(r.set, type, unit, sport);
     case 'longestDuration':
       return formatClock(r.value);
     case 'longestDistance':
-      return `${formatNumber(r.value / 1000)} km`;
+      return sport === 'swim' ? `${Math.round(r.value)} m` : `${formatNumber(r.value / 1000)} km`;
   }
 }

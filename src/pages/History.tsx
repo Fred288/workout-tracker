@@ -82,7 +82,7 @@ export default function History() {
                                 {e.sets.length} × {ex ? displayName(ex) : 'Unbekannte Übung'}
                               </span>
                               <span className="shrink-0 tabular-nums text-neutral-500">
-                                {best ? formatSet(best, ex?.type ?? 'weight_reps', unit) : ''}
+                                {best ? formatSet(best, ex?.type ?? 'weight_reps', unit, ex?.sport) : ''}
                               </span>
                             </li>
                           );

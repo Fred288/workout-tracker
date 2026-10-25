@@ -1,7 +1,8 @@
 import type { Goal, GoalType, Plan, PlanWeek, PlannedSession, Workout } from '../db/types';
 import { addDays, daysBetween, mondayOf } from './dates';
 import { newId } from './id';
-import { RUN_EXERCISE_ID, blocksToSets } from './runTemplates';
+import { blocksToSets } from './runTemplates';
+import { SPORT_EXERCISE, SPORT_LABEL, partsOf } from './sports';
 
 export const GOAL_LABEL: Record<GoalType, string> = {
   '5k': '5 km',
@@ -71,21 +72,19 @@ export function sessionsOfWeek(sessions: PlannedSession[], weekStart: string): P
 
 /** A not yet started workout for a planned session, linked back through plannedSessionId. */
 export function workoutFromSession(s: PlannedSession, now: number): Workout {
-  const sets = blocksToSets(s.blocks ?? [{ repeat: 1, steps: [{ intensity: 'easy' }] }]);
+  const parts = partsOf(s).map((p) => (p.blocks.length ? p : { ...p, blocks: [{ repeat: 1, steps: [{ intensity: 'easy' as const }] }] }));
   return {
     id: newId(),
-    name: s.title ?? 'Lauf',
+    name: s.title ?? SPORT_LABEL[s.sport],
     startedAt: now,
     sport: s.sport,
     plannedSessionId: s.id,
-    exercises: [
-      {
-        id: newId(),
-        exerciseId: RUN_EXERCISE_ID,
-        order: 0,
-        sets: sets.map((x) => ({ id: newId(), ...x, completed: false })),
-      },
-    ],
+    exercises: parts.map((p, i) => ({
+      id: newId(),
+      exerciseId: SPORT_EXERCISE[p.sport],
+      order: i,
+      sets: blocksToSets(p.blocks).map((x) => ({ id: newId(), ...x, completed: false })),
+    })),
   };
 }
 

@@ -125,6 +125,36 @@
       "images": [],
       "level": "beginner",
       "isCustom": false
+    },
+    {
+      "id": "Swimming",
+      "name": "Swimming",
+      "nameDe": "Schwimmen",
+      "equipment": "none",
+      "type": "distance_duration",
+      "category": "cardio",
+      "sport": "swim",
+      "primaryMuscles": ["lats", "shoulders"],
+      "secondaryMuscles": ["triceps", "abdominals", "quadriceps"],
+      "instructions": ["Swim the distance or the sets of the session, usually in a pool. Log the distance in metres and the time; pace is shown per 100 m."],
+      "images": [],
+      "level": "beginner",
+      "isCustom": false
+    },
+    {
+      "id": "Core_and_Mobility",
+      "name": "Core and Mobility",
+      "nameDe": "Stabi und Mobility",
+      "equipment": "none",
+      "type": "duration",
+      "category": "strength",
+      "sport": "strength",
+      "primaryMuscles": ["abdominals"],
+      "secondaryMuscles": ["lower back", "glutes", "shoulders"],
+      "instructions": ["A short routine for trunk stability and mobility, for example planks, side planks, bridges, dead bugs and hip and shoulder mobility. Log the total time."],
+      "images": [],
+      "level": "beginner",
+      "isCustom": false
     }
   ]
 }

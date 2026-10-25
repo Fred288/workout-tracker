@@ -59,10 +59,10 @@ export default function ExerciseStats({ exercise, tab }: { exercise: Exercise; t
           return (
             <li key={k} className="rounded-xl border border-border bg-surface p-4">
               <div className="text-sm text-neutral-400">{recordLabel(k, exercise.type)}</div>
-              <div className="text-2xl font-semibold tabular-nums">{recordValueText(k, r, exercise.type, unit)}</div>
+              <div className="text-2xl font-semibold tabular-nums">{recordValueText(k, r, exercise.type, unit, exercise.sport)}</div>
               <Link to={`/history/${r.workoutId}`} className="text-xs text-accent">
                 {longDate(r.date)}
-                {k !== 'bestSetVolume' && ` · ${formatSet(r.set, exercise.type, unit)}`}
+                {k !== 'bestSetVolume' && ` · ${formatSet(r.set, exercise.type, unit, exercise.sport)}`}
               </Link>
             </li>
           );
@@ -90,7 +90,7 @@ export default function ExerciseStats({ exercise, tab }: { exercise: Exercise; t
               {s.sets.map((set, i) => (
                 <li key={set.id} className={`tabular-nums ${isCountingSet(set) ? '' : 'text-neutral-500'}`}>
                   <span className="inline-block w-6 text-neutral-500">{i + 1}</span>
-                  {formatSet(set, exercise.type, unit)}
+                  {formatSet(set, exercise.type, unit, exercise.sport)}
                   {set.type === 'warmup' && <span className="ml-2 text-xs">Aufwärmen</span>}
                   {set.type === 'drop' && <span className="ml-2 text-xs text-neutral-500">Dropsatz</span>}
                   {set.type === 'failure' && <span className="ml-2 text-xs text-neutral-500">Versagen</span>}

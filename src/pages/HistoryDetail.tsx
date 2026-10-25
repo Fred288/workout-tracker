@@ -208,7 +208,7 @@ export default function HistoryDetail() {
                     {item.sets.map((s, i) => (
                       <li key={s.id} className="tabular-nums">
                         <span className="inline-block w-6 text-neutral-500">{i + 1}</span>
-                        {formatSet(s, ex?.type ?? 'weight_reps', unit)}
+                        {formatSet(s, ex?.type ?? 'weight_reps', unit, ex?.sport)}
                         {setDetail(ex?.sport, s) && <span className="ml-2 text-xs text-neutral-400">{setDetail(ex?.sport, s)}</span>}
                         {s.type !== 'normal' && <span className="ml-2 text-xs text-neutral-500">{SET_LABEL[s.type]}</span>}
                       </li>

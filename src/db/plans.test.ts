@@ -17,9 +17,9 @@ import {
   startPlannedSession,
   updateGoal,
 } from './plans';
-import { RUN_PRESETS } from '../lib/runTemplates';
+import { ENDURANCE_PRESETS } from '../lib/endurancePresets';
 
-const preset = (id: string) => RUN_PRESETS.find((p) => p.id === id)!;
+const preset = (id: string) => ENDURANCE_PRESETS.find((p) => p.id === id)!;
 
 beforeEach(async () => {
   await Promise.all([db.goals, db.plans, db.plannedSessions, db.workouts, db.meta].map((t) => t.clear()));

@@ -2,6 +2,7 @@ import type { Exercise, GoalType, PlannedSession, Workout, WorkoutSet, Zone } fr
 import { addDays, daysBetween, toIso } from './dates';
 import { DEFAULT_ZONE } from './runTemplates';
 import { elapsedMs } from './runClock';
+import { partsOf, stepSeconds } from './sports';
 import { zoneFromHr, type HrZones } from './zones';
 
 // Training load model ("Belastungspunkte"), modelled on TrainingPeaks' TSS / CTL / ATL / TSB but
@@ -96,21 +97,23 @@ const PLAN_PACE_SEC_PER_KM = 360;
  * Expected points of a planned session from its steps. Distance-only steps count at 6:00 per km
  * unless a race time is known.
  */
-export function plannedLoad(s: Pick<PlannedSession, 'blocks' | 'kind'>, opts: { goalType?: GoalType; raceTimeSec?: number } = {}): number {
+export function plannedLoad(s: Pick<PlannedSession, 'blocks' | 'kind'> & Partial<Pick<PlannedSession, 'parts' | 'sport'>>, opts: { goalType?: GoalType; raceTimeSec?: number } = {}): number {
   if (s.kind === 'race') {
     const intensity = (opts.goalType && RACE_IF[opts.goalType]) ?? 0.9;
     const distance = s.blocks?.[0]?.steps[0]?.distanceM ?? 0;
     const sec = opts.raceTimeSec ?? (distance / 1000) * PLAN_PACE_SEC_PER_KM;
     return points(sec, intensity);
   }
-  return (s.blocks ?? []).reduce(
-    (n, b) =>
-      n +
-      b.repeat *
-        b.steps.reduce((m, st) => {
-          const sec = st.durationSec ?? ((st.distanceM ?? 0) / 1000) * PLAN_PACE_SEC_PER_KM;
-          return m + points(sec, ZONE_IF[st.zone ?? DEFAULT_ZONE[st.intensity]]);
-        }, 0),
+  return partsOf(s).reduce(
+    (total, part) =>
+      total +
+      part.blocks.reduce(
+        (n, b) =>
+          n +
+          b.repeat *
+            b.steps.reduce((m, st) => m + points(stepSeconds(part.sport, st), ZONE_IF[st.zone ?? DEFAULT_ZONE[st.intensity]]), 0),
+        0,
+      ),
     0,
   );
 }

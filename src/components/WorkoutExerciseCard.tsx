@@ -15,7 +15,7 @@ interface Column {
   label: string;
 }
 
-function columnsFor(type: ExerciseType, unit: WeightUnit): Column[] {
+function columnsFor(type: ExerciseType, unit: WeightUnit, meters = false): Column[] {
   switch (type) {
     case 'weight_reps':
       return [{ kind: 'weight', label: unit }, { kind: 'reps', label: 'Wdh.' }];
@@ -26,12 +26,12 @@ function columnsFor(type: ExerciseType, unit: WeightUnit): Column[] {
     case 'duration':
       return [{ kind: 'duration', label: 'Zeit' }];
     case 'distance_duration':
-      return [{ kind: 'distance', label: 'km' }, { kind: 'duration', label: 'Zeit' }];
+      return [{ kind: 'distance', label: meters ? 'm' : 'km' }, { kind: 'duration', label: 'Zeit' }];
   }
 }
 
 /** Display value of a set field (weights converted to the user's unit). */
-function fieldText(s: WorkoutSet | undefined, kind: FieldKind, unit: WeightUnit): string {
+function fieldText(s: WorkoutSet | undefined, kind: FieldKind, unit: WeightUnit, meters = false): string {
   if (!s) return '';
   switch (kind) {
     case 'weight':
@@ -41,7 +41,7 @@ function fieldText(s: WorkoutSet | undefined, kind: FieldKind, unit: WeightUnit)
     case 'duration':
       return s.durationSec !== undefined ? formatClock(s.durationSec) : '';
     case 'distance':
-      return s.distanceM !== undefined ? formatNumber(s.distanceM / 1000) : '';
+      return s.distanceM !== undefined ? (meters ? String(Math.round(s.distanceM)) : formatNumber(s.distanceM / 1000)) : '';
     case 'hr':
       return s.avgHr !== undefined ? String(s.avgHr) : '';
     case 'rpe':
@@ -50,7 +50,7 @@ function fieldText(s: WorkoutSet | undefined, kind: FieldKind, unit: WeightUnit)
 }
 
 /** Parses field text into a set patch; returns null for invalid (still typing) input. */
-function parseField(text: string, kind: FieldKind, unit: WeightUnit): Partial<WorkoutSet> | null {
+function parseField(text: string, kind: FieldKind, unit: WeightUnit, meters = false): Partial<WorkoutSet> | null {
   const empty = !text.trim();
   switch (kind) {
     case 'weight': {
@@ -67,7 +67,7 @@ function parseField(text: string, kind: FieldKind, unit: WeightUnit): Partial<Wo
     }
     case 'distance': {
       const n = parseNumber(text);
-      return empty ? { distanceM: undefined } : n === undefined ? null : { distanceM: Math.round(n * 1000) };
+      return empty ? { distanceM: undefined } : n === undefined ? null : { distanceM: Math.round(meters ? n : n * 1000) };
     }
     case 'hr': {
       const n = parseNumber(text);
@@ -179,7 +179,8 @@ export default function WorkoutExerciseCard({
   const heartZones = profile ? hrZones(profile) : undefined;
   const sport = exercise?.sport;
   const endurance = !!sport && sport !== 'strength';
-  const cols = columnsFor(type, unit);
+  const meters = exercise?.sport === 'swim';
+  const cols = columnsFor(type, unit, meters);
   const gridCols = hideCheck
     ? cols.length === 2
       ? 'grid-cols-[2.25rem_1fr_4.5rem_4.5rem]'
@@ -286,17 +287,17 @@ export default function WorkoutExerciseCard({
               >
                 {meta.short || workingIndex}
               </button>
-              <span className="truncate text-sm text-neutral-500">{prev ? formatSet(prev, type, unit) : '–'}</span>
+              <span className="truncate text-sm text-neutral-500">{prev ? formatSet(prev, type, unit, exercise?.sport) : '–'}</span>
               {cols.map((c) => (
                 <SetField
                   key={c.kind}
                   kind={c.kind}
                   label={`${c.label} Satz ${i + 1}`}
                   done={s.completed}
-                  value={fieldText(s, c.kind, unit)}
-                  placeholder={fieldText(prev, c.kind, unit)}
+                  value={fieldText(s, c.kind, unit, meters)}
+                  placeholder={fieldText(prev, c.kind, unit, meters)}
                   onChange={(text) => {
-                    const patch = parseField(text, c.kind, unit);
+                    const patch = parseField(text, c.kind, unit, meters);
                     if (patch) onSetChange(s.id, patch);
                   }}
                 />

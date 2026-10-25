@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useProfile } from '../db/profile';
-import type { Workout } from '../db/types';
+import type { Sport, Workout } from '../db/types';
 import { formatClock } from '../lib/format';
 import { formatPace } from '../lib/pace';
 import {
@@ -41,8 +41,11 @@ export default function RunPanel({
   onMutate,
   onNext,
   onFinish,
+  sports,
 }: {
   workout: Workout;
+  /** Sport of every exercise of the workout, by WorkoutExercise id. */
+  sports: ReadonlyMap<string, Sport>;
   now: number;
   onMutate: (fn: (w: Workout) => Workout) => void;
   /** Finishes the current step; distance in metres if the user entered one. */
@@ -50,9 +53,13 @@ export default function RunPanel({
   onFinish: (distanceM?: number) => void;
 }) {
   const step = currentStep(workout);
+  // The step decides the units; when all steps are done the last exercise with a done set does.
+  const lastDone = [...workout.exercises].reverse().find((e) => e.sets.some((s) => s.completed));
+  const stepSport: Sport = sports.get(step?.exerciseId ?? lastDone?.id ?? '') ?? 'run';
+  const meters = stepSport === 'swim';
   const profile = useProfile();
   const paceZones = profile ? profilePaceZones(profile) : undefined;
-  const targetPace = step?.set.zone && paceZones ? paceRangeText(paceZones.zones[step.set.zone]) : '';
+  const targetPace = stepSport === 'run' && step?.set.zone && paceZones ? paceRangeText(paceZones.zones[step.set.zone]) : '';
   const paused = isPaused(workout);
   const total = elapsedMs(workout, now) / 1000;
   const inStep = stepElapsedSec(workout, now);
@@ -67,21 +74,25 @@ export default function RunPanel({
     setDistText('');
   }
   const typed = parseNumber(distText);
-  const distanceM = typed !== undefined && typed >= 0 ? Math.round(typed * 1000) : undefined;
+  const distanceM = typed !== undefined && typed >= 0 ? Math.round(meters ? typed : typed * 1000) : undefined;
 
   const progress = target ? Math.min(1, inStep / target) : (total % 60) / 60;
   const over = target ? inStep - target : 0;
 
-  const doneM = doneDistanceM(workout);
-  const doneSets = workout.exercises.flatMap((e) => e.sets).filter((s) => s.completed && s.distanceM && s.durationSec);
+  // Totals of the sport that is on right now (a brick workout shows bike, then run).
+  const ofSport = { ...workout, exercises: workout.exercises.filter((e) => (sports.get(e.id) ?? 'run') === stepSport) };
+  const doneM = doneDistanceM(ofSport);
+  const doneSets = ofSport.exercises.flatMap((e) => e.sets).filter((s) => s.completed && s.distanceM && s.durationSec);
   const pace = formatPace(
-    'run',
+    stepSport,
     doneSets.reduce((n, s) => n + s.distanceM!, 0),
     doneSets.reduce((n, s) => n + s.durationSec!, 0),
   );
+  const paceStat = { run: ['/km', 'Ø Pace /km'], swim: ['/100 m', 'Ø Pace /100 m'], bike: ['km/h', 'Ø km/h'], strength: ['', 'Ø Pace'] }[stepSport];
 
   const kind = step ? (step.set.type === 'warmup' ? 'Locker' : 'Belastung') : 'Fertig';
   const sport = SPORT_LABEL[workout.sport ?? 'run'];
+  const exerciseLabel = { run: 'Laufen', bike: 'Rad', swim: 'Schwimmen', strength: 'Stabi' }[stepSport];
 
   const round = 'flex h-16 w-16 items-center justify-center rounded-full text-2xl';
 
@@ -119,7 +130,7 @@ export default function RunPanel({
         {step ? (
           <>
             <div className="text-sm text-neutral-400">
-              Schritt {step.number} von {step.total} · {kind}
+              {exerciseLabel} · Schritt {step.number} von {step.total} · {kind}
               {step.set.zone ? ` · Zone ${step.set.zone}` : ''}
             </div>
             <div className="text-lg font-semibold tabular-nums">
@@ -128,7 +139,7 @@ export default function RunPanel({
                   ? `+${formatClock(over)} über Ziel`
                   : `noch ${formatClock(target - inStep)}`
                 : planned
-                  ? `Ziel ${formatNumber(planned / 1000)} km · ${formatClock(inStep)}`
+                  ? `Ziel ${meters ? `${Math.round(planned)} m` : `${formatNumber(planned / 1000)} km`} · ${formatClock(inStep)}`
                   : formatClock(inStep)}
             </div>
             {targetPace && <div className="text-sm text-neutral-400">Zielpace {targetPace}</div>}
@@ -140,23 +151,23 @@ export default function RunPanel({
 
       <div className="mt-4 grid grid-cols-2 divide-x divide-border border-y border-border py-3 text-center">
         <div>
-          <div className="text-2xl font-semibold tabular-nums">{pace ? pace.replace(' /km', '') : '–'}</div>
-          <div className="text-sm text-accent">Ø Pace /km</div>
+          <div className="text-2xl font-semibold tabular-nums">{pace ? pace.replace(` ${paceStat[0]}`, '') : '–'}</div>
+          <div className="text-sm text-accent">{paceStat[1]}</div>
         </div>
         <div>
-          <div className="text-2xl font-semibold tabular-nums">{formatNumber(Math.round(doneM / 10) / 100)}</div>
-          <div className="text-sm text-accent">Distanz km</div>
+          <div className="text-2xl font-semibold tabular-nums">{meters ? Math.round(doneM) : formatNumber(Math.round(doneM / 10) / 100)}</div>
+          <div className="text-sm text-accent">Distanz {meters ? 'm' : 'km'}</div>
         </div>
       </div>
 
       {step && (
         <label className="mt-4 flex items-center justify-between gap-3 text-sm text-neutral-300">
-          <span>Distanz dieses Schritts (km)</span>
+          <span>Distanz dieses Schritts ({meters ? 'm' : 'km'})</span>
           <input
             inputMode="decimal"
-            aria-label="Distanz dieses Schritts in km"
+            aria-label={`Distanz dieses Schritts in ${meters ? 'm' : 'km'}`}
             value={distText}
-            placeholder={planned ? formatNumber(planned / 1000) : '0'}
+            placeholder={planned ? (meters ? String(Math.round(planned)) : formatNumber(planned / 1000)) : '0'}
             onChange={(e) => setDistText(e.target.value)}
             className="h-11 w-24 rounded-md bg-border text-center text-base tabular-nums placeholder:text-neutral-600"
           />

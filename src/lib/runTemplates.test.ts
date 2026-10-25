@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { RUN_PRESETS, blocksToSets, templateFromPreset } from './runTemplates';
+import { ENDURANCE_PRESETS } from './endurancePresets';
+import { templateFromPreset } from './endurancePresets';
+import { RUN_PRESETS, blocksToSets } from './runTemplates';
 import { addExercises, createWorkout, templateFromWorkout, updateSet, workoutFromTemplate } from './workout';
 
 describe('blocksToSets', () => {
@@ -36,7 +38,7 @@ describe('presets', () => {
   });
 
   it('start as run workout with unchecked sets', () => {
-    const w = workoutFromTemplate(templateFromPreset(RUN_PRESETS.find((p) => p.id === 'intervals-time')!), 1);
+    const w = workoutFromTemplate(templateFromPreset(ENDURANCE_PRESETS.find((p) => p.id === 'intervals-time')!), 1);
     expect(w.sport).toBe('run');
     expect(w.exercises[0].exerciseId).toBe('Running');
     expect(w.exercises[0].sets.every((s) => !s.completed)).toBe(true);

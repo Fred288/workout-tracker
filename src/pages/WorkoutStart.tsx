@@ -10,7 +10,8 @@ import type { Template, Workout } from '../db/types';
 import { displayName } from '../lib/exercises';
 import { formatClock } from '../lib/format';
 import { useNow } from '../lib/hooks';
-import { RUN_PRESETS, templateFromPreset } from '../lib/runTemplates';
+import { PRESET_GROUPS, templateFromPreset } from '../lib/endurancePresets';
+import { SPORT_LABEL } from '../lib/sports';
 import { createWorkout, workoutFromPrevious, workoutFromTemplate } from '../lib/workout';
 
 const RECENT_COUNT = 3;
@@ -122,10 +123,11 @@ export default function WorkoutStart() {
             )}
           </section>
 
-          <section className="mt-6">
-            <h2 className="mb-2 text-sm font-semibold text-neutral-400">Lauf-Vorlagen</h2>
+          {PRESET_GROUPS.map((g) => (
+          <section key={g.sport} className="mt-6">
+            <h2 className="mb-2 text-sm font-semibold text-neutral-400">{SPORT_LABEL[g.sport]}-Vorlagen</h2>
             <ul className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {RUN_PRESETS.map((p) => (
+              {g.presets.map((p) => (
                 <li key={p.id} className="rounded-xl border border-border bg-surface p-3">
                   <div className="truncate font-semibold">{p.name}</div>
                   <div className="line-clamp-2 text-sm text-neutral-500">{p.description}</div>
@@ -140,6 +142,7 @@ export default function WorkoutStart() {
               ))}
             </ul>
           </section>
+          ))}
 
           {data.recent.length > 0 && (
             <section className="mt-6">
