@@ -9,6 +9,7 @@ import { workoutDurationMs, workoutVolume } from '../lib/stats';
 import { workoutRecords } from '../lib/records';
 import RecordBadges from '../components/RecordBadges';
 import { formatNumber, kgToUnit, useWeightUnit } from '../lib/units';
+import { setDetail } from '../lib/pace';
 
 export default function WorkoutSummary() {
   const { id = '' } = useParams();
@@ -68,6 +69,7 @@ export default function WorkoutSummary() {
                   <li key={s.id} className="tabular-nums">
                     <span className="inline-block w-6 text-neutral-500">{i + 1}</span>
                     {formatSet(s, ex?.type ?? 'weight_reps', unit)}
+                    {setDetail(ex?.sport, s) && <span className="ml-2 text-xs text-neutral-400">{setDetail(ex?.sport, s)}</span>}
                     {s.type !== 'normal' && (
                       <span className="ml-2 text-xs text-neutral-500">
                         {{ warmup: 'Aufwärmen', drop: 'Dropsatz', failure: 'Versagen' }[s.type]}

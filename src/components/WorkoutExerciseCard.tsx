@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { Exercise, ExerciseType, SetType, WorkoutExercise, WorkoutSet } from '../db/types';
+import type { Exercise, ExerciseType, SetType, WorkoutExercise, WorkoutSet, Zone } from '../db/types';
 import { displayName } from '../lib/exercises';
 import { formatClock, formatSet, parseClock } from '../lib/format';
+import { formatSetExtras, setPace } from '../lib/pace';
 import { formatNumber, kgToUnit, parseNumber, unitToKg, type WeightUnit } from '../lib/units';
 
-type FieldKind = 'weight' | 'reps' | 'duration' | 'distance';
+type FieldKind = 'weight' | 'reps' | 'duration' | 'distance' | 'hr' | 'rpe';
 interface Column {
   kind: FieldKind;
   label: string;
@@ -38,6 +39,10 @@ function fieldText(s: WorkoutSet | undefined, kind: FieldKind, unit: WeightUnit)
       return s.durationSec !== undefined ? formatClock(s.durationSec) : '';
     case 'distance':
       return s.distanceM !== undefined ? formatNumber(s.distanceM / 1000) : '';
+    case 'hr':
+      return s.avgHr !== undefined ? String(s.avgHr) : '';
+    case 'rpe':
+      return s.rpe !== undefined ? formatNumber(s.rpe) : '';
   }
 }
 
@@ -60,6 +65,14 @@ function parseField(text: string, kind: FieldKind, unit: WeightUnit): Partial<Wo
     case 'distance': {
       const n = parseNumber(text);
       return empty ? { distanceM: undefined } : n === undefined ? null : { distanceM: Math.round(n * 1000) };
+    }
+    case 'hr': {
+      const n = parseNumber(text);
+      return empty ? { avgHr: undefined } : n === undefined || !Number.isInteger(n) || n < 30 || n > 250 ? null : { avgHr: n };
+    }
+    case 'rpe': {
+      const n = parseNumber(text);
+      return empty ? { rpe: undefined } : n === undefined || n < 1 || n > 10 ? null : { rpe: n };
     }
   }
 }
@@ -88,7 +101,7 @@ function SetField({
   return (
     <input
       aria-label={label}
-      inputMode={kind === 'reps' ? 'numeric' : kind === 'duration' ? 'text' : 'decimal'}
+      inputMode={kind === 'reps' || kind === 'hr' ? 'numeric' : kind === 'duration' ? 'text' : 'decimal'}
       enterKeyHint="next"
       value={text}
       placeholder={placeholder}
@@ -156,6 +169,8 @@ export default function WorkoutExerciseCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const [openSet, setOpenSet] = useState<string | null>(null);
   const type = exercise?.type ?? 'weight_reps';
+  const sport = exercise?.sport;
+  const endurance = !!sport && sport !== 'strength';
   const cols = columnsFor(type, unit);
   const gridCols = hideCheck
     ? cols.length === 2
@@ -282,6 +297,41 @@ export default function WorkoutExerciseCard({
                 </button>
               )}
             </div>
+            {endurance && (setPace(sport, s) || formatSetExtras(s)) && (
+              <p className="px-1 pb-1 text-xs tabular-nums text-neutral-400">
+                {[setPace(sport, s), formatSetExtras(s)].filter(Boolean).join(' · ')}
+              </p>
+            )}
+            {openSet === s.id && endurance && (
+              <div className="space-y-2 px-1 py-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="w-14 text-neutral-400">Zone</span>
+                  {([1, 2, 3, 4, 5] as Zone[]).map((z) => (
+                    <button
+                      key={z}
+                      aria-pressed={s.zone === z}
+                      aria-label={`Zone ${z}`}
+                      className={`h-11 min-w-11 flex-1 rounded-md ${s.zone === z ? 'bg-accent text-white' : 'bg-border'}`}
+                      onClick={() => onSetChange(s.id, { zone: s.zone === z ? undefined : z })}
+                    >
+                      {z}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="flex items-center gap-2">
+                    <span className="w-16 shrink-0 whitespace-nowrap text-neutral-400">Ø Puls</span>
+                    <SetField kind="hr" label={`Durchschnittspuls Satz ${i + 1}`} done={false} placeholder="bpm" value={fieldText(s, 'hr', unit)}
+                      onChange={(text) => { const patch = parseField(text, 'hr', unit); if (patch) onSetChange(s.id, patch); }} />
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <span className="w-9 shrink-0 text-neutral-400">RPE</span>
+                    <SetField kind="rpe" label={`RPE Satz ${i + 1}`} done={false} placeholder="1–10" value={fieldText(s, 'rpe', unit)}
+                      onChange={(text) => { const patch = parseField(text, 'rpe', unit); if (patch) onSetChange(s.id, patch); }} />
+                  </label>
+                </div>
+              </div>
+            )}
             {openSet === s.id && (
               <div className="flex flex-wrap gap-2 px-1 py-2 text-sm">
                 {SET_TYPES.map((t) => (

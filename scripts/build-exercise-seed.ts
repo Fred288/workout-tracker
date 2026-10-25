@@ -3,7 +3,7 @@
 import { mkdir, writeFile, access, readFile, readdir, rm } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { createHash } from 'node:crypto';
-import type { Equipment, Exercise, ExerciseType, Level } from '../src/db/types.ts';
+import type { Equipment, Exercise, ExerciseType, Level, Sport } from '../src/db/types.ts';
 
 const SOURCE = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main';
 const SKIP_IMAGES = process.argv.includes('--no-images');
@@ -152,6 +152,8 @@ const core = JSON.parse(await readFile('scripts/exercise-core.json', 'utf8')) as
   names: string[];
   types: Record<string, ExerciseType>;
   recategorize: Record<string, string>;
+  sports: Record<string, Sport>;
+  extras: Exercise[];
 };
 const coreNames = new Set(core.names);
 for (const n of [...coreNames, ...Object.keys(core.recategorize)]) {
@@ -164,6 +166,15 @@ for (const [name, type] of Object.entries(core.types)) {
   const e = byName.get(name);
   if (!e || !coreNames.has(name)) throw new Error(`exercise-core types: "${name}" is not in the core list`);
   e.type = type;
+}
+for (const [name, sport] of Object.entries(core.sports)) {
+  const e = byName.get(name);
+  if (!e || !coreNames.has(name)) throw new Error(`exercise-core sports: "${name}" is not in the core list`);
+  e.sport = sport;
+}
+for (const x of core.extras) {
+  if (exercises.some((e) => e.id === x.id)) throw new Error(`exercise-core extras: duplicate id "${x.id}"`);
+  exercises.push(x);
 }
 const KEPT_CATEGORIES = ['strength', 'stretching', 'powerlifting', 'cardio'];
 const odd = exercises.filter((e) => e.category && !KEPT_CATEGORIES.includes(e.category));

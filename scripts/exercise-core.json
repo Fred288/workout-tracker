@@ -95,5 +95,36 @@
     "Star Jump": "cardio",
     "Front Box Jump": "cardio",
     "Split Jump": "cardio"
-  }
+  },
+  "_comment_endurance": "Own endurance exercises (not in the source dataset) and sport tags for kept source exercises. Extras are appended to the library as is.",
+  "sports": {
+    "Running, Treadmill": "run",
+    "Bicycling": "bike",
+    "Bicycling, Stationary": "bike"
+  },
+  "extras": [
+    {
+      "id": "Running",
+      "name": "Running",
+      "nameDe": "Laufen",
+      "equipment": "none",
+      "type": "distance_duration",
+      "category": "cardio",
+      "sport": "run",
+      "primaryMuscles": [
+        "quadriceps"
+      ],
+      "secondaryMuscles": [
+        "calves",
+        "glutes",
+        "hamstrings"
+      ],
+      "instructions": [
+        "Run outdoors at the pace or zone the session asks for. Log distance and time, optionally heart rate and zone."
+      ],
+      "images": [],
+      "level": "beginner",
+      "isCustom": false
+    }
+  ]
 }
