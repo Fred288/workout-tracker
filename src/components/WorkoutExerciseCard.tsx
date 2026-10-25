@@ -6,6 +6,8 @@ import { formatClock, formatSet, parseClock } from '../lib/format';
 import { formatSetExtras, setPace } from '../lib/pace';
 import type { DragHandleProps } from './SortableList';
 import { formatNumber, kgToUnit, parseNumber, unitToKg, type WeightUnit } from '../lib/units';
+import { useProfile } from '../db/profile';
+import { hrZones, zoneFromHr } from '../lib/zones';
 
 type FieldKind = 'weight' | 'reps' | 'duration' | 'distance' | 'hr' | 'rpe';
 interface Column {
@@ -173,6 +175,8 @@ export default function WorkoutExerciseCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const [openSet, setOpenSet] = useState<string | null>(null);
   const type = exercise?.type ?? 'weight_reps';
+  const profile = useProfile();
+  const heartZones = profile ? hrZones(profile) : undefined;
   const sport = exercise?.sport;
   const endurance = !!sport && sport !== 'strength';
   const cols = columnsFor(type, unit);
@@ -335,7 +339,13 @@ export default function WorkoutExerciseCard({
                   <label className="flex items-center gap-2">
                     <span className="w-16 shrink-0 whitespace-nowrap text-neutral-400">Ø Puls</span>
                     <SetField kind="hr" label={`Durchschnittspuls Satz ${i + 1}`} done={false} placeholder="bpm" value={fieldText(s, 'hr', unit)}
-                      onChange={(text) => { const patch = parseField(text, 'hr', unit); if (patch) onSetChange(s.id, patch); }} />
+                      onChange={(text) => {
+                        const patch = parseField(text, 'hr', unit);
+                        if (!patch) return;
+                        // With known heart rate zones the zone follows the heart rate, unless one was chosen.
+                        if (patch.avgHr && !s.zone && heartZones) patch.zone = zoneFromHr(patch.avgHr, heartZones);
+                        onSetChange(s.id, patch);
+                      }} />
                   </label>
                   <label className="flex items-center gap-2">
                     <span className="w-9 shrink-0 text-neutral-400">RPE</span>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import PageTitle from '../components/PageTitle';
+import ZonesSection from '../components/ZonesSection';
 import { useActiveWorkout } from '../db/activeWorkout';
 import { db } from '../db/dexie';
 import {
@@ -54,6 +55,7 @@ export default function Endurance() {
       ) : (
         <GoalForm today={today} />
       )}
+      <ZonesSection />
     </div>
   );
 }

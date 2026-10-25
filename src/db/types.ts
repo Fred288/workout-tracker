@@ -110,6 +110,8 @@ export interface Profile {
   restingHr?: number;
   thresholdHr?: number;
   ftpW?: number;
+  /** One recent race or hard time trial; all running paces derive from it (Runna style). */
+  referenceRun?: { distanceM: number; timeSec: number };
 }
 
 export type GoalType = '5k' | '10k' | 'half' | 'marathon' | 'sprint' | 'olympic' | '70.3' | 'ironman';

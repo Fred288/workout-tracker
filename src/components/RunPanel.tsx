@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useProfile } from '../db/profile';
 import type { Workout } from '../db/types';
 import { formatClock } from '../lib/format';
 import { formatPace } from '../lib/pace';
@@ -12,6 +13,8 @@ import {
   stepElapsedSec,
 } from '../lib/runClock';
 import { formatNumber, parseNumber } from '../lib/units';
+import { profilePaceZones } from '../lib/zones';
+import { paceRangeText } from './ZonesSection';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -47,6 +50,9 @@ export default function RunPanel({
   onFinish: (distanceM?: number) => void;
 }) {
   const step = currentStep(workout);
+  const profile = useProfile();
+  const paceZones = profile ? profilePaceZones(profile) : undefined;
+  const targetPace = step?.set.zone && paceZones ? paceRangeText(paceZones.zones[step.set.zone]) : '';
   const paused = isPaused(workout);
   const total = elapsedMs(workout, now) / 1000;
   const inStep = stepElapsedSec(workout, now);
@@ -125,6 +131,7 @@ export default function RunPanel({
                   ? `Ziel ${formatNumber(planned / 1000)} km · ${formatClock(inStep)}`
                   : formatClock(inStep)}
             </div>
+            {targetPace && <div className="text-sm text-neutral-400">Zielpace {targetPace}</div>}
           </>
         ) : (
           <div className="text-sm text-neutral-400">Alle Schritte erledigt. Du kannst beenden.</div>
