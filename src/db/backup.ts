@@ -1,10 +1,10 @@
 import { db } from './dexie';
-import type { BodyMeasurement, Exercise, Profile, Template, Workout } from './types';
+import type { BodyMeasurement, Exercise, Goal, Plan, PlannedSession, Profile, Template, Workout } from './types';
 
 // Full export of the personal data, used as backup and to move the state between devices by hand.
 
 const BACKUP_FORMAT = 'workout-tracker-backup';
-const BACKUP_VERSION = 2; // v2 adds referencedExercises
+const BACKUP_VERSION = 3; // v2 adds referencedExercises, v3 goals/plans/plannedSessions
 export const LAST_BACKUP_KEY = 'lastBackupAt';
 
 export interface BackupFile {
@@ -19,6 +19,9 @@ export interface BackupFile {
     templates: Template[];
     measurements: BodyMeasurement[];
     profile: Profile[];
+    goals?: Goal[];
+    plans?: Plan[];
+    plannedSessions?: PlannedSession[];
   };
 }
 
@@ -29,6 +32,9 @@ export interface RestoreResult {
   templates: number;
   measurements: number;
   customExercises: number;
+  goals: number;
+  plans: number;
+  plannedSessions: number;
 }
 
 /**
@@ -36,13 +42,17 @@ export interface RestoreResult {
  * data refers to. The running workout stays on this device.
  */
 export async function createBackup(): Promise<BackupFile> {
-  const [customExercises, allWorkouts, templates, measurements, profile] = await Promise.all([
-    db.exercises.filter((e) => e.isCustom).toArray(),
-    db.workouts.toArray(),
-    db.templates.toArray(),
-    db.measurements.toArray(),
-    db.profile.toArray(),
-  ]);
+  const [customExercises, allWorkouts, templates, measurements, profile, goals, plans, plannedSessions] =
+    await Promise.all([
+      db.exercises.filter((e) => e.isCustom).toArray(),
+      db.workouts.toArray(),
+      db.templates.toArray(),
+      db.measurements.toArray(),
+      db.profile.toArray(),
+      db.goals.toArray(),
+      db.plans.toArray(),
+      db.plannedSessions.toArray(),
+    ]);
   const workouts = allWorkouts.filter((w) => !!w.finishedAt);
   const used = new Set([...workouts, ...templates].flatMap((x) => x.exercises.map((e) => e.exerciseId)));
   const referencedExercises = (await db.exercises.bulkGet([...used])).filter(
@@ -52,7 +62,7 @@ export async function createBackup(): Promise<BackupFile> {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
     exportedAt: Date.now(),
-    data: { customExercises, referencedExercises, workouts, templates, measurements, profile },
+    data: { customExercises, referencedExercises, workouts, templates, measurements, profile, goals, plans, plannedSessions },
   };
 }
 
@@ -100,7 +110,11 @@ function isBackup(x: unknown): x is BackupFile {
     !!b.data &&
     ['customExercises', 'workouts', 'templates', 'measurements', 'profile'].every((k) =>
       Array.isArray((b.data as Record<string, unknown>)[k]),
-    )
+    ) &&
+    ['goals', 'plans', 'plannedSessions'].every((k) => {
+      const v = (b.data as Record<string, unknown>)[k];
+      return v === undefined || Array.isArray(v);
+    })
   );
 }
 
@@ -124,11 +138,14 @@ export async function readBackupFile(file: File): Promise<BackupFile> {
 export async function restoreBackup(file: File, mode: RestoreMode = 'replace'): Promise<RestoreResult> {
   const { data: d } = await readBackupFile(file);
   const incomingWorkouts = d.workouts.filter((w) => !!w.finishedAt);
-  return db.transaction('rw', [db.exercises, db.workouts, db.templates, db.measurements, db.profile], async () => {
+  const tables = [db.exercises, db.workouts, db.templates, db.measurements, db.profile, db.goals, db.plans, db.plannedSessions];
+  return db.transaction('rw', tables, async () => {
     if (mode === 'replace') {
       await db.exercises.filter((e) => e.isCustom).delete();
       await db.workouts.filter((w) => !!w.finishedAt).delete();
-      await Promise.all([db.templates.clear(), db.measurements.clear(), db.profile.clear()]);
+      await Promise.all(
+        [db.templates, db.measurements, db.profile, db.goals, db.plans, db.plannedSessions].map((t) => t.clear()),
+      );
     }
     // Library exercises the data needs: only add what this device lacks.
     const refs = d.referencedExercises ?? [];
@@ -150,6 +167,10 @@ export async function restoreBackup(file: File, mode: RestoreMode = 'replace'): 
       workouts: await addMissing(db.workouts, incomingWorkouts),
       templates: await addMissing(db.templates, d.templates),
       measurements: await addMissing(db.measurements, d.measurements),
+      // Missing before v3.
+      goals: await addMissing(db.goals, d.goals ?? []),
+      plans: await addMissing(db.plans, d.plans ?? []),
+      plannedSessions: await addMissing(db.plannedSessions, d.plannedSessions ?? []),
     };
     // Single profile row ('me'): keep this device's profile when one exists.
     if (d.profile[0] && !(await db.profile.get('me'))) await db.profile.put({ ...d.profile[0], id: 'me' });

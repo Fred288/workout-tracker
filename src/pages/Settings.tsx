@@ -29,7 +29,7 @@ export default function Settings() {
       if (!confirm(text)) return;
       const r = await restoreBackup(file, mode);
       setMessage(
-        `Import fertig: ${r.workouts} Workouts, ${r.templates} Vorlagen, ${r.measurements} Gewichtseinträge, ${r.customExercises} eigene Übungen ${mode === 'merge' ? 'ergänzt' : 'übernommen'}.`,
+        `Import fertig: ${r.workouts} Workouts, ${r.templates} Vorlagen, ${r.measurements} Gewichtseinträge, ${r.customExercises} eigene Übungen${r.plans ? `, ${r.plans} Trainingspläne` : ''} ${mode === 'merge' ? 'ergänzt' : 'übernommen'}.`,
       );
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'Import fehlgeschlagen.');
