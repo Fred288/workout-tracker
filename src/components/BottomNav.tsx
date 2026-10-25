@@ -9,6 +9,7 @@ export default function BottomNav() {
         <NavLink
           key={t.to}
           to={t.to}
+          data-tour={`nav-${t.to.slice(1)}`}
           className={({ isActive }) =>
             `flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs ${
               isActive ? 'text-accent' : 'text-neutral-400'

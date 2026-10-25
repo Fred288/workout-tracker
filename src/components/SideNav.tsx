@@ -10,6 +10,7 @@ export default function SideNav() {
         <NavLink
           key={t.to}
           to={t.to}
+          data-tour={`nav-${t.to.slice(1)}`}
           className={({ isActive }) =>
             `flex min-h-12 items-center gap-3 rounded-lg px-3 ${
               isActive ? 'bg-border text-accent' : 'text-neutral-300 hover:bg-border/60'

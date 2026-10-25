@@ -59,7 +59,7 @@ export default function Endurance() {
   return (
     <div className="pb-6">
       <PageTitle>Ausdauer</PageTitle>
-      <div role="tablist" aria-label="Bereich" className="mb-4 flex gap-1 rounded-lg bg-surface p-1 text-sm md:max-w-md">
+      <div role="tablist" aria-label="Bereich" data-tour="endurance-tabs" className="mb-4 flex gap-1 rounded-lg bg-surface p-1 text-sm md:max-w-md">
         {TABS.map((t) => (
           <button
             key={t.value}

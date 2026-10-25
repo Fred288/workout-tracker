@@ -15,10 +15,12 @@ import ExerciseEdit from './pages/ExerciseEdit';
 import Settings from './pages/Settings';
 import Records from './pages/Records';
 import Endurance from './pages/Endurance';
+import { TourProvider } from './components/AppTour';
 
 export default function App() {
   return (
     <HashRouter>
+      <TourProvider>
       <div className="flex h-full pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
         <SideNav />
         <div className="flex min-w-0 flex-1 flex-col">
@@ -48,6 +50,7 @@ export default function App() {
           <BottomNav />
         </div>
       </div>
+      </TourProvider>
     </HashRouter>
   );
 }

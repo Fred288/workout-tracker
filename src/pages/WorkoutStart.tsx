@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useTour } from '../components/AppTour';
 import PageTitle from '../components/PageTitle';
 import Reminders from '../components/Reminders';
 import { startWorkout, useActiveWorkout } from '../db/activeWorkout';
@@ -18,6 +19,7 @@ const RECENT_COUNT = 3;
 
 export default function WorkoutStart() {
   const active = useActiveWorkout();
+  const tour = useTour();
   const navigate = useNavigate();
   const now = useNow(1000, !!active);
   const [menuFor, setMenuFor] = useState<string | null>(null);
@@ -47,6 +49,7 @@ export default function WorkoutStart() {
     <div className="pb-6">
       <PageTitle>Workout</PageTitle>
       <Reminders />
+      <div data-tour="start-workout">
       {active === undefined ? null : active ? (
         <div className="rounded-xl border border-accent/40 bg-accent/10 p-4">
           <div className="text-sm text-neutral-400">Läuft seit {formatClock((now - active.startedAt) / 1000)}</div>
@@ -60,10 +63,11 @@ export default function WorkoutStart() {
           Leeres Workout starten
         </button>
       )}
+      </div>
 
       {data && (
         <>
-          <section className="mt-6">
+          <section className="mt-6" data-tour="templates">
             <h2 className="mb-2 text-sm font-semibold text-neutral-400">Vorlagen</h2>
             {data.templates.length === 0 ? (
               <p className="rounded-xl border border-dashed border-border p-4 text-sm text-neutral-500">
@@ -124,7 +128,7 @@ export default function WorkoutStart() {
           </section>
 
           {PRESET_GROUPS.map((g) => (
-          <section key={g.sport} className="mt-6">
+          <section key={g.sport} className="mt-6" data-tour={g.sport === 'run' ? 'presets' : undefined}>
             <h2 className="mb-2 text-sm font-semibold text-neutral-400">{SPORT_LABEL[g.sport]}-Vorlagen</h2>
             <ul className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {g.presets.map((p) => (
@@ -174,6 +178,14 @@ export default function WorkoutStart() {
       {active && (
         <p className="mt-4 text-xs text-neutral-500">Beende oder verwirf das laufende Workout, um ein neues zu starten.</p>
       )}
+
+      <section className="mt-8 rounded-xl border border-border bg-surface p-4">
+        <h2 className="font-semibold">Neu hier?</h2>
+        <p className="mt-1 text-sm text-neutral-400">Die App-Tour erklärt Schritt für Schritt alle Bereiche. Sie startet nur auf Knopfdruck.</p>
+        <button className="mt-3 min-h-11 w-full rounded-lg bg-border text-sm font-medium md:w-auto md:px-6" onClick={tour.start}>
+          App-Tour starten
+        </button>
+      </section>
     </div>
   );
 }
