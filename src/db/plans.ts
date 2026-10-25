@@ -1,10 +1,11 @@
 import { db } from './dexie';
 import { startWorkout } from './activeWorkout';
-import type { Goal, GoalPriority, GoalType, PlannedSession } from './types';
+import type { Goal, GoalPriority, GoalType, Level, PlannedSession, Weekday } from './types';
 import { buildWeeks, newPlan, weekIndexOf, workoutFromSession } from '../lib/plan';
 import { newId } from '../lib/id';
 import { mondayOf } from '../lib/dates';
 import type { RunPreset } from '../lib/runTemplates';
+import { generatePlan } from '../lib/planGenerator';
 
 export interface GoalInput {
   type: GoalType;
@@ -96,6 +97,58 @@ export async function doneSessions(sessionIds: string[]): Promise<Map<string, st
     .filter((w) => !!w.finishedAt)
     .toArray();
   return new Map(done.map((w) => [w.plannedSessionId!, w.id]));
+}
+
+export interface PlanSettings {
+  runDays: Weekday[];
+  longRunDay: Weekday;
+  level: Level;
+  baselineLongRunMin: number;
+}
+
+/**
+ * (Re)creates the sessions of a plan from today on. Sessions that already have a workout
+ * (finished or running) and everything in the past stay; other sessions from today on are
+ * replaced. Returns the generator warnings.
+ */
+export async function generatePlanSessions(planId: string, settings: PlanSettings, today: string): Promise<string[]> {
+  return db.transaction('rw', [db.plans, db.goals, db.plannedSessions, db.workouts], async () => {
+    const plan = await db.plans.get(planId);
+    const goal = plan && (await db.goals.get(plan.goalId));
+    if (!plan || !goal) throw new Error('Plan nicht gefunden.');
+    const result = generatePlan({
+      goalType: goal.type,
+      targetDate: goal.targetDate,
+      startDate: plan.startDate,
+      firstDate: today,
+      pastWeeks: plan.weeks,
+      ...settings,
+    });
+
+    const existing = await db.plannedSessions.where('planId').equals(planId).toArray();
+    const linked = new Set(
+      (await db.workouts.where('plannedSessionId').anyOf(existing.map((s) => s.id)).toArray()).map((w) => w.plannedSessionId!),
+    );
+    const keep = existing.filter((s) => s.date < today || linked.has(s.id));
+    const replace = existing.filter((s) => !keep.includes(s));
+    const busy = new Set(keep.filter((s) => s.date >= today).map((s) => s.date));
+
+    await db.plannedSessions.bulkDelete(replace.map((s) => s.id));
+    await db.plannedSessions.bulkAdd(
+      result.sessions.filter((s) => !busy.has(s.date)).map((s) => ({ ...s, id: newId(), planId })),
+    );
+    await db.plans.put({
+      ...plan,
+      weeks: result.weeks,
+      level: settings.level,
+      longRunDay: settings.longRunDay,
+      baselineLongRunMin: settings.baselineLongRunMin,
+      availability: Object.fromEntries(settings.runDays.map((d) => [d, ['run']])),
+    });
+    // Sessions that stay get the week index of the (possibly new) week layout.
+    await db.plannedSessions.bulkPut(keep.map((s) => ({ ...s, weekIndex: weekIndexOf({ weeks: result.weeks }, s.date) })));
+    return result.warnings;
+  });
 }
 
 /** Starts the planned session as the active workout. Throws when a workout is already running. */

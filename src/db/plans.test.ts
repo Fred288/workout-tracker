@@ -8,6 +8,7 @@ import {
   deleteGoal,
   deleteSession,
   doneSessions,
+  generatePlanSessions,
   moveSession,
   setSessionSkipped,
   startPlannedSession,
@@ -108,5 +109,41 @@ describe('starting a session', () => {
     const b = await addPlannedSession(planId, '2026-10-28', preset('long'));
     await startPlannedSession(a);
     await expect(startPlannedSession(b)).rejects.toThrow();
+  });
+});
+
+describe('generatePlanSessions', () => {
+  const settings = { runDays: [1, 3, 6] as (0 | 1 | 2 | 3 | 4 | 5 | 6)[], longRunDay: 6 as const, level: 'beginner' as const, baselineLongRunMin: 60 };
+
+  it('creates the sessions and stores phases and settings on the plan', async () => {
+    const { planId } = await setup();
+    const warnings = await generatePlanSessions(planId, settings, '2026-10-26');
+    expect(warnings).toEqual([]);
+    const plan = (await db.plans.get(planId))!;
+    expect(plan).toMatchObject({ longRunDay: 6, baselineLongRunMin: 60, availability: { 1: ['run'], 3: ['run'], 6: ['run'] } });
+    expect(plan.weeks.at(-1)!.phase).toBe('race');
+    const sessions = await db.plannedSessions.where('planId').equals(planId).toArray();
+    expect(sessions.length).toBeGreaterThan(60);
+    expect(sessions.every((s) => s.date >= '2026-10-26')).toBe(true);
+    expect(sessions.find((s) => s.kind === 'race')!.date).toBe('2027-04-11');
+  });
+
+  it('regenerating keeps past and linked sessions, replaces the other open ones', async () => {
+    const { planId } = await setup();
+    await generatePlanSessions(planId, settings, '2026-10-26');
+    const before = await db.plannedSessions.where('planId').equals(planId).sortBy('date');
+    const doneOne = before.find((s) => s.date === '2026-11-01')!; // Sunday long run, finished
+    await db.workouts.put({ id: 'w1', name: 'x', startedAt: 1, finishedAt: 2, plannedSessionId: doneOne.id, exercises: [] });
+    const past = before.find((s) => s.date === '2026-10-27')!; // in the past on regeneration, not done
+
+    await generatePlanSessions(planId, { ...settings, runDays: [0, 2, 6], longRunDay: 6 }, '2026-11-01');
+    const after = await db.plannedSessions.where('planId').equals(planId).toArray();
+    expect(after.find((s) => s.id === doneOne.id)).toBeDefined();
+    expect(after.find((s) => s.id === past.id)).toBeDefined();
+    // No duplicate on the day of the kept session.
+    expect(after.filter((s) => s.date === '2026-11-01')).toHaveLength(1);
+    // New sessions use the new run days.
+    const future = after.filter((s) => s.date > '2026-11-01' && s.kind !== 'race');
+    expect(future.every((s) => [0, 2, 6].includes((new Date(s.date + 'T12:00').getDay() + 6) % 7))).toBe(true);
   });
 });

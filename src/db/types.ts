@@ -147,6 +147,9 @@ export interface Plan {
   level: Level;
   availability: Partial<Record<Weekday, Sport[]>>;
   hoursPerWeek?: number;
+  /** Generator settings, kept to pre-fill "Plan neu erstellen". */
+  longRunDay?: Weekday;
+  baselineLongRunMin?: number;
   weeks: PlanWeek[];
   createdAt: number;
   archivedAt?: number;

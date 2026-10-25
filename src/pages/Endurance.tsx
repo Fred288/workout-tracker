@@ -10,13 +10,14 @@ import {
   deleteGoal,
   deleteSession,
   doneSessions,
+  generatePlanSessions,
   moveSession,
   setSessionSkipped,
   startPlannedSession,
   updateGoal,
 } from '../db/plans';
-import type { Goal, GoalType, Plan, PlannedSession } from '../db/types';
-import { addDays, daysBetween, formatDay, isIsoDate, parseIso, toIso } from '../lib/dates';
+import type { Goal, GoalType, Level, Plan, PlannedSession, Weekday } from '../db/types';
+import { WEEKDAYS_SHORT, addDays, daysBetween, formatDay, isIsoDate, parseIso, toIso } from '../lib/dates';
 import { formatClock, parseClock } from '../lib/format';
 import { GOAL_LABEL, RUN_GOALS, planProgress, sessionStatus, sessionsOfWeek, weekIndexOf, type SessionStatus } from '../lib/plan';
 import { RUN_PRESETS } from '../lib/runTemplates';
@@ -123,6 +124,9 @@ function PlanView({
   const current = Math.max(0, weekIndexOf(plan, today));
   const [week, setWeek] = useState(current);
   const [editing, setEditing] = useState(false);
+  const hasFuture = sessions.some((s) => s.date >= today);
+  const [setup, setSetup] = useState(!hasFuture);
+  const [warnings, setWarnings] = useState<string[]>([]);
   useEffect(() => setWeek((w) => Math.min(w, plan.weeks.length - 1)), [plan.weeks.length]);
 
   const w = plan.weeks[Math.min(week, plan.weeks.length - 1)];
@@ -154,6 +158,32 @@ function PlanView({
         {editing && <GoalEdit goal={goal} today={today} onDone={() => setEditing(false)} />}
       </section>
 
+      {setup ? (
+        <PlanSetup
+          plan={plan}
+          replacing={hasFuture}
+          onCancel={hasFuture ? () => setSetup(false) : undefined}
+          onDone={(w) => {
+            setWarnings(w);
+            setSetup(false);
+            setWeek(current);
+          }}
+          today={today}
+        />
+      ) : (
+        <button className={`${btn} w-full md:w-auto`} onClick={() => setSetup(true)}>
+          Plan neu erstellen
+        </button>
+      )}
+
+      {warnings.length > 0 && (
+        <ul className="space-y-1 rounded-xl border border-amber-400/40 bg-amber-400/10 p-3 text-sm text-amber-200">
+          {warnings.map((w) => (
+            <li key={w}>{w}</li>
+          ))}
+        </ul>
+      )}
+
       <section>
         <div className="mb-2 flex items-center gap-2">
           <button aria-label="Vorherige Woche" className={`${btn} w-11 px-0`} disabled={week <= 0} onClick={() => setWeek(week - 1)}>
@@ -166,6 +196,7 @@ function PlanView({
             </div>
             <div className="text-sm text-neutral-400">
               {formatDay(w.startDate)} – {formatDay(addDays(w.startDate, 6))} · {PHASE_LABEL[w.phase]}
+              {w.isRecovery ? ' · Ruhewoche' : ''}
             </div>
           </div>
           <button aria-label="Nächste Woche" className={`${btn} w-11 px-0`} disabled={week >= plan.weeks.length - 1} onClick={() => setWeek(week + 1)}>
@@ -373,5 +404,123 @@ function GoalEdit({ goal, today, onDone }: { goal: Goal; today: string; onDone: 
         </button>
       </div>
     </div>
+  );
+}
+
+const LEVELS: { value: Level; label: string }[] = [
+  { value: 'beginner', label: 'Einsteiger' },
+  { value: 'intermediate', label: 'Fortgeschritten' },
+];
+
+/** Generator settings: run days, long run day, level and current longest run. */
+function PlanSetup({
+  plan,
+  replacing,
+  today,
+  onCancel,
+  onDone,
+}: {
+  plan: Plan;
+  replacing: boolean;
+  today: string;
+  onCancel?: () => void;
+  onDone: (warnings: string[]) => void;
+}) {
+  const saved = Object.keys(plan.availability).map(Number) as Weekday[];
+  const [days, setDays] = useState<Weekday[]>(saved.length ? saved : [1, 3, 6]);
+  const [longDay, setLongDay] = useState<Weekday>(plan.longRunDay ?? 6);
+  const [level, setLevel] = useState<Level>(plan.level === 'beginner' ? 'beginner' : 'intermediate');
+  const [baseline, setBaseline] = useState(String(plan.baselineLongRunMin ?? 60));
+  const [error, setError] = useState('');
+  const baselineMin = Number(baseline);
+  const longDayValid = days.includes(longDay);
+  const valid = days.length >= 2 && longDayValid && Number.isFinite(baselineMin) && baselineMin >= 10 && baselineMin <= 300;
+
+  const toggle = (d: Weekday) => setDays((xs) => (xs.includes(d) ? xs.filter((x) => x !== d) : [...xs, d].sort((a, b) => a - b)));
+
+  async function submit() {
+    if (replacing && !confirm('Offene Einheiten ab heute werden durch den neuen Plan ersetzt. Erledigte bleiben. Fortfahren?')) return;
+    try {
+      onDone(await generatePlanSessions(plan.id, { runDays: days, longRunDay: longDay, level, baselineLongRunMin: baselineMin }, today));
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
+  return (
+    <section className="space-y-4 rounded-xl border border-border bg-surface p-4">
+      <h2 className="text-lg font-semibold">{replacing ? 'Plan neu erstellen' : 'Plan erstellen'}</h2>
+      <fieldset>
+        <legend className="mb-1 text-sm text-neutral-400">Lauftage</legend>
+        <div className="grid grid-cols-7 gap-1">
+          {WEEKDAYS_SHORT.map((label, i) => {
+            const d = i as Weekday;
+            const on = days.includes(d);
+            return (
+              <button
+                key={label}
+                type="button"
+                aria-pressed={on}
+                className={`min-h-11 rounded-lg text-sm font-medium ${on ? 'bg-accent text-white' : 'bg-border text-neutral-300'}`}
+                onClick={() => toggle(d)}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className="block text-sm text-neutral-400">
+          Langer Lauf am
+          <select
+            className={`${input} mt-1 block w-full text-neutral-100`}
+            value={longDay}
+            onChange={(e) => setLongDay(Number(e.target.value) as Weekday)}
+          >
+            {days.map((d) => (
+              <option key={d} value={d}>
+                {WEEKDAYS_SHORT[d]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block text-sm text-neutral-400">
+          Erfahrung
+          <select className={`${input} mt-1 block w-full text-neutral-100`} value={level} onChange={(e) => setLevel(e.target.value as Level)}>
+            {LEVELS.map((l) => (
+              <option key={l.value} value={l.value}>
+                {l.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block text-sm text-neutral-400">
+          Längster Lauf zuletzt (min)
+          <input
+            inputMode="numeric"
+            className={`${input} mt-1 block w-full text-neutral-100`}
+            value={baseline}
+            onChange={(e) => setBaseline(e.target.value)}
+          />
+        </label>
+      </div>
+      {!longDayValid && days.length > 0 && <p className="text-sm text-amber-300">Wähle einen Lauftag für den langen Lauf.</p>}
+      {error && <p className="text-sm text-red-400">{error}</p>}
+      <div className="flex gap-2">
+        <button className="min-h-12 flex-1 rounded-lg bg-accent font-semibold text-white disabled:opacity-50" disabled={!valid} onClick={() => void submit()}>
+          Plan erstellen
+        </button>
+        {onCancel && (
+          <button className={btn} onClick={onCancel}>
+            Abbrechen
+          </button>
+        )}
+      </div>
+      <p className="text-xs text-neutral-500">
+        Regelbasiert: Grundlage, Aufbau, Spitze, Tapering, jede 3. Woche Ruhewoche, höchstens 10 % mehr pro Woche. Alle Zeiten
+        nach Gefühl bzw. Zone, Paces folgen später.
+      </p>
+    </section>
   );
 }
