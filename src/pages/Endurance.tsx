@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import PageTitle from '../components/PageTitle';
+import EnduranceToday from '../components/EnduranceToday';
 import ZonesSection from '../components/ZonesSection';
+
+const EnduranceStats = lazy(() => import('../components/EnduranceStats'));
 import { useActiveWorkout } from '../db/activeWorkout';
 import { db } from '../db/dexie';
 import {
@@ -46,19 +49,55 @@ export default function Endurance() {
     return { goal, plan, sessions, done };
   }, [today]);
 
+  const [tab, setTab] = useState<Tab | undefined>(undefined);
   if (!data) return null;
+  const current: Tab = tab ?? (data.goal && data.plan ? 'today' : 'plan');
+
   return (
     <div className="pb-6">
       <PageTitle>Ausdauer</PageTitle>
-      {data.goal && data.plan ? (
-        <PlanView goal={data.goal} plan={data.plan} sessions={data.sessions} done={data.done} today={today} />
-      ) : (
-        <GoalForm today={today} />
+      <div role="tablist" aria-label="Bereich" className="mb-4 flex gap-1 rounded-lg bg-surface p-1 text-sm md:max-w-md">
+        {TABS.map((t) => (
+          <button
+            key={t.value}
+            role="tab"
+            aria-selected={current === t.value}
+            onClick={() => setTab(t.value)}
+            className={`min-h-11 flex-1 rounded-md ${current === t.value ? 'bg-border font-semibold' : 'text-neutral-400'}`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {current === 'today' && (
+        <EnduranceToday goal={data.goal} plan={data.plan} sessions={data.sessions} done={data.done} today={today} onOpenPlan={() => setTab('plan')} />
       )}
-      <ZonesSection />
+      {current === 'plan' && (
+        <>
+          {data.goal && data.plan ? (
+            <PlanView goal={data.goal} plan={data.plan} sessions={data.sessions} done={data.done} today={today} />
+          ) : (
+            <GoalForm today={today} />
+          )}
+          <ZonesSection />
+        </>
+      )}
+      {current === 'stats' && (
+        <Suspense fallback={<p className="py-8 text-center text-sm text-neutral-500">Lade Auswertung …</p>}>
+          <EnduranceStats goal={data.goal} plan={data.plan} sessions={data.sessions} done={data.done} today={today} />
+        </Suspense>
+      )}
     </div>
   );
 }
+
+type Tab = 'today' | 'plan' | 'stats';
+const TABS: { value: Tab; label: string }[] = [
+  { value: 'today', label: 'Heute' },
+  { value: 'plan', label: 'Plan' },
+  { value: 'stats', label: 'Auswertung' },
+];
 
 function GoalForm({ today }: { today: string }) {
   const [type, setType] = useState<GoalType>('marathon');
