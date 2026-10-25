@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import PageTitle from '../components/PageTitle';
+import ActivityImport from '../components/ActivityImport';
 import EnduranceToday from '../components/EnduranceToday';
 import ZonesSection from '../components/ZonesSection';
 
@@ -71,7 +72,10 @@ export default function Endurance() {
       </div>
 
       {current === 'today' && (
-        <EnduranceToday goal={data.goal} plan={data.plan} sessions={data.sessions} done={data.done} today={today} onOpenPlan={() => setTab('plan')} />
+        <>
+          <EnduranceToday goal={data.goal} plan={data.plan} sessions={data.sessions} done={data.done} today={today} onOpenPlan={() => setTab('plan')} />
+          <ActivityImport sessions={data.sessions} done={data.done} />
+        </>
       )}
       {current === 'plan' && (
         <>
