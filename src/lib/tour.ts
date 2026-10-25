@@ -95,7 +95,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/endurance',
     target: 'endurance-tabs',
     title: 'Heute, Plan, Auswertung',
-    text: '„Heute“ zeigt die nächste Einheit, die Woche und Vorschläge, falls du etwas verpasst hast oder nicht fit bist. Im „Plan“ legst du ein Ziel mit Datum an und lässt dir einen Plan erstellen, mit deinen Trainingstagen und deinem aktuellen Umfang als Startpunkt. „Auswertung“ zeigt Umfang, Intensität, Fortschritt, Prognose und deine Belastung.',
+    text: '„Heute“ zeigt die nächste Einheit, die Woche und Vorschläge, falls du etwas verpasst hast oder nicht fit bist. Im „Plan“ legst du ein Ziel mit Datum an und lässt dir einen Plan erstellen, mit deinen Trainingstagen und deinem aktuellen Umfang als Startpunkt. „Auswertung“ zeigt Umfang (auch je Sportart), Intensität, Fortschritt, Rad-Leistung, Schwimm-Pace, Prognose und deine Belastung.',
   },
   {
     id: 'endurance-more',

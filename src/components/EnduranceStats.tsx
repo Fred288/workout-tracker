@@ -14,6 +14,8 @@ import {
   weeklyRunVolume,
   zoneDistribution,
 } from '../lib/endurance';
+import { ENDURANCE_SPORTS, bestBikePower, bikePowerTrend, enduranceSets, ftpFromBest, longestSwim, swimPaceTrend, weeklySportVolume, type EnduranceSport, type SportSet } from '../lib/enduranceSports';
+import { SPORT_LABEL } from '../lib/sports';
 import { formatClock } from '../lib/format';
 import { formatNumber } from '../lib/units';
 import { GOAL_LABEL } from '../lib/plan';
@@ -87,23 +89,30 @@ export default function EnduranceStats({
     const list = await db.exercises.bulkGet(ids);
     return { workouts, exercises: new Map(list.filter((e) => !!e).map((e) => [e!.id, e!])) };
   }, []);
+  const all = useMemo(() => (data ? enduranceSets(data.workouts, data.exercises) : []), [data]);
   const sets = useMemo(() => (data ? runSets(data.workouts, data.exercises) : []), [data]);
+  const hasSport = (sport: EnduranceSport) => all.some((x) => x.sport === sport);
 
   if (!data || !profile) return null;
-  if (sets.length === 0) {
+  if (all.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-border p-4 text-sm text-neutral-500">
-        Noch keine Läufe im Verlauf. Sobald du Einheiten mit „Laufen“ beendest, erscheinen hier die Auswertungen.
+        Noch keine Ausdauer-Einheiten im Verlauf. Sobald du Einheiten mit Laufen, Rad oder Schwimmen beendest, erscheinen hier die Auswertungen.
       </p>
     );
   }
 
+  const runs = sets.length > 0;
+
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <VolumeCard sets={sets} plan={plan} sessions={sessions} done={done} today={today} />
+      {runs && <VolumeCard sets={sets} plan={plan} sessions={sessions} done={done} today={today} />}
+      {all.some((x) => x.sport !== 'run') && <SportVolumeCard sets={all} />}
       {plan && <AdherenceCard plan={plan} sessions={sessions} done={done} today={today} />}
-      <ZonesCard sets={sets} />
-      <ProgressCard sets={sets} />
+      <ZonesCard sets={all} />
+      {runs && <ProgressCard sets={sets} />}
+      {hasSport('bike') && <BikeCard sets={all} ftpW={profile.ftpW} />}
+      {hasSport('swim') && <SwimCard sets={all} />}
       <LoadCard
         workouts={data.workouts}
         exercises={data.exercises}
@@ -113,12 +122,14 @@ export default function EnduranceStats({
         done={done}
         today={today}
       />
+      {runs && (
       <ForecastCard
         sets={sets}
         goal={goal}
         reference={profile.referenceRun}
         onAdopt={(r) => void saveProfile({ referenceRun: { ...r, setAt: Date.now() } })}
       />
+      )}
     </div>
   );
 }
@@ -245,7 +256,7 @@ function AdherenceCard({ plan, sessions, done, today }: { plan: Plan; sessions: 
   );
 }
 
-function ZonesCard({ sets }: { sets: ReturnType<typeof runSets> }) {
+function ZonesCard({ sets }: { sets: SportSet[] }) {
   const [range, setRange] = useState<'4' | '12' | 'all'>('4');
   const dist = useMemo(() => {
     const weeks = range === 'all' ? 0 : Number(range);
@@ -266,7 +277,7 @@ function ZonesCard({ sets }: { sets: ReturnType<typeof runSets> }) {
         ]}
       />
       {dist.knownSec === 0 ? (
-        <p className="py-6 text-center text-sm text-neutral-500">Keine Läufe mit Zone in diesem Zeitraum. Trage bei den Sätzen die Zone ein oder den Puls.</p>
+        <p className="py-6 text-center text-sm text-neutral-500">Keine Einheiten mit Zone in diesem Zeitraum. Trage bei den Sätzen die Zone ein oder den Puls.</p>
       ) : (
         <>
           <div className="mb-1 text-2xl font-bold tabular-nums">
@@ -558,5 +569,199 @@ function LoadCard({
       </div>
       <p className="mt-1 text-xs text-neutral-500">Helles Band: +5 bis +25, grob die Form, mit der man in einen Wettkampf gehen möchte.</p>
     </section>
+  );
+}
+
+const SPORT_COLORS: Record<EnduranceSport, string> = {
+  swim: '#3fb5a3',
+  bike: '#c8742f',
+  run: ACCENT,
+};
+
+function SportVolumeCard({ sets }: { sets: SportSet[] }) {
+  const rows = useMemo(
+    () =>
+      weeklySportVolume(sets, Date.now(), 12).map((w) => ({
+        weekStart: w.weekStart,
+        label: shortDate(w.weekStart),
+        swim: Math.round(w.sec.swim / 60),
+        bike: Math.round(w.sec.bike / 60),
+        run: Math.round(w.sec.run / 60),
+      })),
+    [sets],
+  );
+  const present = ENDURANCE_SPORTS.filter((sp) => rows.some((r) => r[sp] > 0));
+
+  return (
+    <Card title="Umfang je Sportart" hint="Trainingszeit pro Woche, letzte 12 Wochen.">
+      <div className="h-52" role="img" aria-label="Wochenumfang je Sportart in Minuten">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+            <CartesianGrid stroke="var(--color-border)" vertical={false} />
+            <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+            <YAxis tick={AXIS} tickLine={false} axisLine={false} width={36} />
+            <Tooltip {...TOOLTIP} cursor={{ fill: 'rgba(255,255,255,0.05)' }} formatter={(v, name) => [`${v} min`, String(name)]} labelFormatter={(l) => `Woche ab ${l}`} />
+            {ENDURANCE_SPORTS.map((sp) => (
+              <Bar key={sp} dataKey={sp} name={SPORT_LABEL[sp]} stackId="t" fill={SPORT_COLORS[sp]} maxBarSize={28} />
+            ))}
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+      <Legend
+        items={present.map((sp) => ({
+          color: SPORT_COLORS[sp],
+          label: SPORT_LABEL[sp],
+        }))}
+      />
+      <details className="mt-2 text-sm text-neutral-400">
+        <summary className="min-h-11 cursor-pointer py-2">Zahlen als Tabelle</summary>
+        <table className="w-full">
+          <thead>
+            <tr className="text-left text-xs text-neutral-500">
+              <th className="py-1 font-normal">Woche</th>
+              {present.map((sp) => (
+                <th key={sp} className="py-1 text-right font-normal">
+                  {SPORT_LABEL[sp]}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.weekStart} className="border-b border-border last:border-0">
+                <td className="py-1">ab {r.label}</td>
+                {present.map((sp) => (
+                  <td key={sp} className="py-1 text-right tabular-nums">
+                    {r[sp]} min
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </details>
+    </Card>
+  );
+}
+
+function BikeCard({ sets, ftpW }: { sets: SportSet[]; ftpW?: number }) {
+  const trend = useMemo(() => bikePowerTrend(sets), [sets]);
+  const best = useMemo(() => bestBikePower(sets), [sets]);
+  const data = trend.map((p) => ({ at: p.at, watts: p.watts }));
+  const estimate = best ? ftpFromBest(best.watts) : undefined;
+  const bike = sets.filter((x) => x.sport === 'bike');
+  const rides = new Set(bike.map((x) => x.workoutId)).size;
+  const km = bike.reduce((n, x) => n + (x.set.distanceM ?? 0), 0) / 1000;
+
+  return (
+    <Card title="Rad" hint="Durchschnittsleistung pro Fahrt (ab 10 Minuten mit Wattwerten).">
+      {data.length < 2 ? (
+        <p className="py-6 text-center text-sm text-neutral-500">
+          Für den Verlauf werden mindestens zwei Fahrten mit Watt gebraucht. Trage die Leistung bei den Sätzen ein oder importiere eine Datei mit Powermeter.
+        </p>
+      ) : (
+        <div className="h-44" role="img" aria-label="Durchschnittsleistung pro Fahrt in Watt">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+              <CartesianGrid stroke="var(--color-border)" vertical={false} />
+              <XAxis dataKey="at" type="number" scale="time" domain={['dataMin', 'dataMax']} tickFormatter={shortDate} tick={AXIS} tickLine={false} axisLine={false} />
+              <YAxis domain={['dataMin - 10', 'dataMax + 10']} tick={AXIS} tickLine={false} axisLine={false} width={36} />
+              <Tooltip {...TOOLTIP} formatter={(v) => [`${v} W`, 'Leistung']} labelFormatter={(l) => shortDate(Number(l))} />
+              {ftpW && (
+                <ReferenceLine
+                  y={ftpW}
+                  stroke={PLAN_LINE}
+                  strokeDasharray="4 3"
+                  label={{
+                    value: 'FTP',
+                    fill: '#8a8a95',
+                    fontSize: 11,
+                    position: 'insideTopRight',
+                  }}
+                />
+              )}
+              <Line
+                dataKey="watts"
+                stroke={SPORT_COLORS.bike}
+                strokeWidth={2}
+                dot={{
+                  r: 4,
+                  fill: SPORT_COLORS.bike,
+                  stroke: '#16161d',
+                  strokeWidth: 2,
+                }}
+                activeDot={{ r: 5 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+      <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
+        <div className="rounded-lg bg-bg p-3">
+          <dt className="text-neutral-400">Beste 20 min</dt>
+          <dd className="text-lg font-semibold tabular-nums">{best ? `${best.watts} W` : '–'}</dd>
+          <dd className="text-xs text-neutral-500">{best ? `${shortDate(best.startedAt)} · FTP etwa ${estimate} W` : 'Ein Satz ab 20 min mit Watt fehlt noch.'}</dd>
+        </div>
+        <div className="rounded-lg bg-bg p-3">
+          <dt className="text-neutral-400">FTP im Profil</dt>
+          <dd className="text-lg font-semibold tabular-nums">{ftpW ? `${ftpW} W` : '–'}</dd>
+          <dd className="text-xs text-neutral-500">
+            {rides} Fahrten · {formatNumber(Math.round(km))} km gesamt
+          </dd>
+        </div>
+      </dl>
+      {estimate && ftpW && Math.abs(estimate - ftpW) >= 10 && (
+        <p className="mt-2 text-xs text-neutral-500">Deine beste 20-Minuten-Leistung spricht für etwa {estimate} W. Die FTP im Profil kannst du unter „Zonen und Tempo“ anpassen.</p>
+      )}
+    </Card>
+  );
+}
+
+function SwimCard({ sets }: { sets: SportSet[] }) {
+  const trend = useMemo(() => swimPaceTrend(sets), [sets]);
+  const longest = useMemo(() => longestSwim(sets), [sets]);
+  const data = trend.map((p) => ({ at: p.at, pace: Math.round(p.secPer100m) }));
+  const total = sets.filter((x) => x.sport === 'swim').reduce((n, x) => n + (x.set.distanceM ?? 0), 0);
+
+  return (
+    <Card title="Schwimmen" hint="Pace pro 100 m und Einheit (ab 400 m).">
+      {data.length < 2 ? (
+        <p className="py-6 text-center text-sm text-neutral-500">Für den Verlauf werden mindestens zwei Einheiten ab 400 m mit Zeit gebraucht.</p>
+      ) : (
+        <div className="h-44" role="img" aria-label="Schwimm-Pace pro Einheit in Minuten pro 100 Meter">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+              <CartesianGrid stroke="var(--color-border)" vertical={false} />
+              <XAxis dataKey="at" type="number" scale="time" domain={['dataMin', 'dataMax']} tickFormatter={shortDate} tick={AXIS} tickLine={false} axisLine={false} />
+              <YAxis reversed domain={['dataMin - 5', 'dataMax + 5']} tick={AXIS} tickLine={false} axisLine={false} width={44} tickFormatter={(v) => formatClock(v)} />
+              <Tooltip {...TOOLTIP} formatter={(v) => [`${formatClock(Number(v))} /100 m`, 'Pace']} labelFormatter={(l) => shortDate(Number(l))} />
+              <Line
+                dataKey="pace"
+                stroke={SPORT_COLORS.swim}
+                strokeWidth={2}
+                dot={{
+                  r: 4,
+                  fill: SPORT_COLORS.swim,
+                  stroke: '#16161d',
+                  strokeWidth: 2,
+                }}
+                activeDot={{ r: 5 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+      <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
+        <div className="rounded-lg bg-bg p-3">
+          <dt className="text-neutral-400">Längster Satz</dt>
+          <dd className="text-lg font-semibold tabular-nums">{longest ? `${formatNumber(longest.distanceM)} m` : '–'}</dd>
+          {longest && <dd className="text-xs text-neutral-500">{shortDate(longest.startedAt)}</dd>}
+        </div>
+        <div className="rounded-lg bg-bg p-3">
+          <dt className="text-neutral-400">Gesamt</dt>
+          <dd className="text-lg font-semibold tabular-nums">{formatNumber(total)} m</dd>
+        </div>
+      </dl>
+    </Card>
   );
 }
