@@ -156,12 +156,17 @@ export type SessionKind = 'easy' | 'long' | 'recovery' | 'tempo' | 'intervals' |
 export type StepIntensity = 'warmup' | 'easy' | 'steady' | 'tempo' | 'threshold' | 'interval' | 'recovery' | 'cooldown';
 
 export interface SessionStep {
-  repeat: number; // 1 = single block
   distanceM?: number;
   durationSec?: number;
   intensity: StepIntensity;
   zone?: Zone;
   note?: string;
+}
+
+/** A group of steps repeated `repeat` times, e.g. 4 x (5 min hard + 2 min jog). */
+export interface SessionBlock {
+  repeat: number;
+  steps: SessionStep[];
 }
 
 export interface PlannedSession {
@@ -175,7 +180,7 @@ export interface PlannedSession {
   targetDurationSec?: number;
   targetDistanceM?: number;
   zone?: Zone;
-  steps?: SessionStep[];
+  blocks?: SessionBlock[];
   /** Only "skipped" is stored; "done" = a workout with this plannedSessionId exists. */
   skippedAt?: number;
 }

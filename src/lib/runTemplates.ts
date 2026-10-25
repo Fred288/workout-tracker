@@ -1,14 +1,10 @@
-import type { SessionStep, StepIntensity, Template, TemplateExercise, Zone } from '../db/types';
+import type { SessionBlock, SessionKind, StepIntensity, Template, TemplateExercise, Zone } from '../db/types';
 import { newId } from './id';
 
 /** Library exercise the built-in run templates use. */
 export const RUN_EXERCISE_ID = 'Running';
 
-/** A group of steps repeated `repeat` times, e.g. 4 x (5 min hard + 2 min jog). */
-export interface StepBlock {
-  repeat: number;
-  steps: Omit<SessionStep, 'repeat'>[];
-}
+export type StepBlock = SessionBlock;
 
 type TemplateSet = TemplateExercise['sets'][number];
 
@@ -46,6 +42,7 @@ const cooldown = { intensity: 'cooldown', durationSec: min(10) } as const;
 
 export interface RunPreset {
   id: string;
+  kind: SessionKind;
   name: string;
   description: string;
   blocks: StepBlock[];
@@ -54,24 +51,28 @@ export interface RunPreset {
 export const RUN_PRESETS: RunPreset[] = [
   {
     id: 'free',
+    kind: 'easy',
     name: 'Freier Lauf',
     description: 'Ohne Vorgabe, nur Zeit und Distanz',
     blocks: [{ repeat: 1, steps: [{ intensity: 'easy' }] }],
   },
   {
     id: 'easy',
+    kind: 'easy',
     name: 'Lockerer Lauf',
     description: '40 min, Zone 2',
     blocks: [{ repeat: 1, steps: [{ intensity: 'easy', durationSec: min(40) }] }],
   },
   {
     id: 'long',
+    kind: 'long',
     name: 'Langer Lauf',
     description: '90 min, Zone 2',
     blocks: [{ repeat: 1, steps: [{ intensity: 'easy', durationSec: min(90) }] }],
   },
   {
     id: 'tempo',
+    kind: 'tempo',
     name: 'Tempolauf',
     description: '10 min ein, 20 min Tempo (Zone 4), 10 min aus',
     blocks: [
@@ -82,6 +83,7 @@ export const RUN_PRESETS: RunPreset[] = [
   },
   {
     id: 'intervals-time',
+    kind: 'intervals',
     name: 'Intervalle 4 × 5 min',
     description: '10 min ein, 4 × (5 min hart, 2 min Trabpause), 10 min aus',
     blocks: [
@@ -98,6 +100,7 @@ export const RUN_PRESETS: RunPreset[] = [
   },
   {
     id: 'intervals-dist',
+    kind: 'intervals',
     name: 'Intervalle 6 × 800 m',
     description: '10 min ein, 6 × (800 m schnell, 400 m Trab), 10 min aus',
     blocks: [

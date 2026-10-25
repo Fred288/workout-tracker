@@ -4,7 +4,7 @@ import { NAV_ITEMS } from './nav';
 /** Phone navigation; replaced by SideNav from md upwards. */
 export default function BottomNav() {
   return (
-    <nav className="grid grid-cols-4 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
+    <nav className="grid grid-cols-5 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
       {NAV_ITEMS.map((t) => (
         <NavLink
           key={t.to}

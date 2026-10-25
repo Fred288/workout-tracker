@@ -40,7 +40,7 @@ const session: PlannedSession = {
   date: '2026-12-22',
   sport: 'run',
   kind: 'intervals',
-  steps: [{ repeat: 4, durationSec: 300, intensity: 'threshold', zone: 4 }],
+  blocks: [{ repeat: 4, steps: [{ durationSec: 300, intensity: 'threshold', zone: 4 }] }],
 };
 const toFile = async () => new File([JSON.stringify(await createBackup())], 'b.json');
 

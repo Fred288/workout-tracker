@@ -14,6 +14,7 @@ import ExerciseDetail from './pages/ExerciseDetail';
 import ExerciseEdit from './pages/ExerciseEdit';
 import Settings from './pages/Settings';
 import Records from './pages/Records';
+import Endurance from './pages/Endurance';
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
                 <Route path="/workout" element={<WorkoutStart />} />
                 <Route path="/workout/active" element={<ActiveWorkout />} />
                 <Route path="/workout/summary/:id" element={<WorkoutSummary />} />
+                <Route path="/endurance" element={<Endurance />} />
                 <Route path="/exercises" element={<Exercises />} />
                 <Route path="/records" element={<Records />} />
                 <Route path="/exercises/new" element={<ExerciseEdit />} />
