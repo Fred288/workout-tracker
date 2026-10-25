@@ -5,9 +5,11 @@ import { db } from '../db/dexie';
 import { discardActive, finishActive, mutateActive, useActiveWorkout } from '../db/activeWorkout';
 import type { Workout } from '../db/types';
 import ExercisePicker from '../components/ExercisePicker';
+import RunPanel from '../components/RunPanel';
 import WorkoutExerciseCard from '../components/WorkoutExerciseCard';
 import { formatClock } from '../lib/format';
 import { useNow, useWakeLock } from '../lib/hooks';
+import { completeStep, currentStep } from '../lib/runClock';
 import { useWeightUnit } from '../lib/units';
 import {
   addExercises,
@@ -56,8 +58,16 @@ export default function ActiveWorkout() {
 
   const mutate = (fn: (w: Workout) => Workout) => void mutateActive(fn);
 
-  async function onFinish() {
-    const w = workout!;
+  const endurance = !!workout.sport && workout.sport !== 'strength';
+
+  async function onFinish(distanceM?: number) {
+    let w = workout!;
+    // The last (or only) step is finished with the time it really took; a free run is one step.
+    const step = currentStep(w);
+    if (endurance && step && step.number === step.total) {
+      await mutateActive((x) => completeStep(x, Date.now(), distanceM));
+      w = completeStep(w, Date.now(), distanceM);
+    }
     const completed = countCompletedSets(w);
     if (completed === 0) {
       if (confirm('Noch kein Satz abgehakt. Workout verwerfen?')) await onDiscard(true);
@@ -97,6 +107,19 @@ export default function ActiveWorkout() {
           Beenden
         </button>
       </div>
+
+      {endurance && (
+        <div className="mt-4">
+          <RunPanel
+            workout={workout}
+            now={now}
+            onMutate={mutate}
+            onNext={(d) => mutate((w) => completeStep(w, Date.now(), d))}
+            onFinish={(d) => void onFinish(d)}
+          />
+          <h2 className="mb-1 mt-6 text-sm font-semibold text-neutral-400">Schritte und Sätze</h2>
+        </div>
+      )}
 
       <div className="mt-4 space-y-4">
         {workout.exercises.map((item, idx) => (

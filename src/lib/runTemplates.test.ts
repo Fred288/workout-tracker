@@ -28,6 +28,7 @@ describe('blocksToSets', () => {
 describe('presets', () => {
   it('have the expected set counts', () => {
     const count = (id: string) => blocksToSets(RUN_PRESETS.find((p) => p.id === id)!.blocks).length;
+    expect(count('free')).toBe(1);
     expect(count('easy')).toBe(1);
     expect(count('tempo')).toBe(3);
     expect(count('intervals-time')).toBe(10);
@@ -35,7 +36,7 @@ describe('presets', () => {
   });
 
   it('start as run workout with unchecked sets', () => {
-    const w = workoutFromTemplate(templateFromPreset(RUN_PRESETS[3]), 1);
+    const w = workoutFromTemplate(templateFromPreset(RUN_PRESETS.find((p) => p.id === 'intervals-time')!), 1);
     expect(w.sport).toBe('run');
     expect(w.exercises[0].exerciseId).toBe('Running');
     expect(w.exercises[0].sets.every((s) => !s.completed)).toBe(true);

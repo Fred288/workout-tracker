@@ -72,6 +72,10 @@ export interface Workout {
   templateId?: string;
   sport?: WorkoutSport;
   plannedSessionId?: string;
+  /** Pauses of the run screen; `to` undefined = paused right now. Elapsed time excludes them. */
+  pauses?: { from: number; to?: number }[];
+  /** Epoch ms the current step of the run screen started (excludes pauses via `pauses`). */
+  stepStartedAt?: number;
 }
 
 export interface TemplateExercise extends Omit<WorkoutExercise, 'sets'> {

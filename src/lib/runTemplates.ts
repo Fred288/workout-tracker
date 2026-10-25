@@ -53,6 +53,12 @@ export interface RunPreset {
 
 export const RUN_PRESETS: RunPreset[] = [
   {
+    id: 'free',
+    name: 'Freier Lauf',
+    description: 'Ohne Vorgabe, nur Zeit und Distanz',
+    blocks: [{ repeat: 1, steps: [{ intensity: 'easy' }] }],
+  },
+  {
     id: 'easy',
     name: 'Lockerer Lauf',
     description: '40 min, Zone 2',

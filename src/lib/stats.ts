@@ -1,4 +1,5 @@
 import type { Workout, WorkoutSet } from '../db/types';
+import { elapsedMs } from './runClock';
 
 // Statistics are always derived from sets, never stored (see CLAUDE.md).
 // Phase 6 extends this file with records and 1RM.
@@ -35,5 +36,5 @@ export function bestSet(sets: WorkoutSet[]): WorkoutSet | undefined {
 }
 
 export function workoutDurationMs(w: Workout, now = Date.now()): number {
-  return Math.max(0, (w.finishedAt ?? now) - w.startedAt);
+  return Math.max(0, elapsedMs(w, now));
 }

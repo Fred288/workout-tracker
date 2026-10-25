@@ -14,6 +14,7 @@ import { fromLocalInput, toLocalInput } from '../lib/history';
 import { workoutDurationMs, workoutVolume } from '../lib/stats';
 import { formatNumber, kgToUnit, useWeightUnit } from '../lib/units';
 import { setDetail } from '../lib/pace';
+import { shiftWorkout } from '../lib/runClock';
 import {
   addCompletedSet,
   moveExercise,
@@ -119,7 +120,7 @@ export default function HistoryDetail() {
               const ms = fromLocalInput(e.target.value);
               if (ms === undefined) return;
               // Keep the duration, only move the workout in time.
-              save((x) => ({ ...x, startedAt: ms, finishedAt: ms + workoutDurationMs(x) }));
+              save((x) => shiftWorkout(x, ms));
             }}
             className="min-h-11 rounded-lg bg-surface px-3 text-base text-neutral-100"
           />

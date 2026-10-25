@@ -1,5 +1,6 @@
 import type { SetType, Template, Workout, WorkoutExercise, WorkoutSet } from '../db/types';
 import { newId } from './id';
+import { closePauses } from './runClock';
 
 // Pure, immutable operations on a workout. The active workout page applies them and
 // writes the result straight to IndexedDB, so every change is auto-saved.
@@ -227,7 +228,7 @@ export function finalizeWorkout(w: Workout, finishedAt: number): Workout {
       .map((e) => ({ ...e, sets: e.sets.filter((s) => s.completed) }))
       .filter((e) => e.sets.length > 0),
   );
-  return { ...w, exercises, finishedAt };
+  return { ...closePauses(w, finishedAt), exercises, finishedAt };
 }
 
 /**
