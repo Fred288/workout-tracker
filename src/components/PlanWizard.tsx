@@ -23,7 +23,7 @@ const LEVELS: { value: Level; label: string }[] = [
  * Guided plan creation: goal, experience and volume, training days, then a preview of the plan
  * (phases, volume, an example week, warnings). Only the last step stores a goal and its plan.
  */
-export default function PlanWizard({ today }: { today: string }) {
+export default function PlanWizard({ today, onCancel, onCreated }: { today: string; onCancel?: () => void; onCreated?: (goalId: string) => void }) {
   const [step, setStep] = useState(0);
   const [type, setType] = useState<GoalType>('marathon');
   const [date, setDate] = useState(addDays(today, 16 * 7));
@@ -63,7 +63,7 @@ export default function PlanWizard({ today }: { today: string }) {
     setBusy(true);
     setError('');
     try {
-      const { planId } = await createGoalWithPlan({ type, targetDate: date, ...(timeSec ? { targetTimeSec: timeSec } : {}) }, today);
+      const { goalId, planId } = await createGoalWithPlan({ type, targetDate: date, ...(timeSec ? { targetTimeSec: timeSec } : {}) }, today);
       await generatePlanSessions(
         planId,
         tri
@@ -71,6 +71,7 @@ export default function PlanWizard({ today }: { today: string }) {
           : { runDays: days, longRunDay: longDay, level, baselineLongRunMin: Math.round(baseline) },
         today,
       );
+      onCreated?.(goalId);
     } catch (e) {
       setError((e as Error).message);
       setBusy(false);
@@ -228,10 +229,16 @@ export default function PlanWizard({ today }: { today: string }) {
 
       {error && <p className="text-sm text-red-400">{error}</p>}
       <div className="flex gap-2">
-        {step > 0 && (
+        {step > 0 ? (
           <button className={btn} disabled={busy} onClick={() => setStep(step - 1)}>
             Zurück
           </button>
+        ) : (
+          onCancel && (
+            <button className={btn} onClick={onCancel}>
+              Abbrechen
+            </button>
+          )
         )}
         {step < 3 ? (
           <button className="min-h-12 flex-1 rounded-lg bg-accent font-semibold text-white disabled:opacity-50" disabled={!valid} onClick={() => setStep(step + 1)}>

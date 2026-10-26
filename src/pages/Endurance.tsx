@@ -27,7 +27,7 @@ import { WEEKDAYS_SHORT, addDays, daysBetween, formatDay, isIsoDate, parseIso, t
 import { formatClock, parseClock } from '../lib/format';
 import { parseNumber } from '../lib/units';
 import { isTriGoal } from '../lib/planGeneratorTri';
-import { GOAL_LABEL, planProgress, sessionStatus, sessionsOfWeek, weekIndexOf, type SessionStatus } from '../lib/plan';
+import { GOAL_LABEL, pickGoal, planProgress, sessionStatus, sessionsOfWeek, weekIndexOf, type SessionStatus } from '../lib/plan';
 import { PRESET_GROUPS } from '../lib/endurancePresets';
 import { SPORT_LABEL } from '../lib/sports';
 
@@ -43,20 +43,43 @@ const STATUS_CLS: Record<SessionStatus, string> = {
 const btn = 'min-h-11 rounded-lg bg-border px-3 text-sm font-medium disabled:opacity-40';
 const input = 'min-h-11 rounded-lg bg-border px-3 text-base';
 
+const GOAL_KEY = 'endurance-goal';
+const loadGoalId = () => {
+  try {
+    return localStorage.getItem(GOAL_KEY);
+  } catch {
+    return null;
+  }
+};
+const storeGoalId = (id: string) => {
+  try {
+    localStorage.setItem(GOAL_KEY, id);
+  } catch {
+    /* the choice is only a convenience */
+  }
+};
+
 export default function Endurance() {
   const today = toIso(new Date());
+  const [selectedId, setSelectedId] = useState<string | null>(() => loadGoalId());
+  const [adding, setAdding] = useState(false);
   const data = useLiveQuery(async () => {
     const goals = (await db.goals.toArray()).sort((a, b) => a.targetDate.localeCompare(b.targetDate));
-    const goal = goals.find((g) => g.targetDate >= today) ?? goals.at(-1);
+    const goal = pickGoal(goals, today, selectedId);
     const plan = goal ? await db.plans.where('goalId').equals(goal.id).first() : undefined;
     const sessions = plan ? await db.plannedSessions.where('planId').equals(plan.id).toArray() : [];
     const done = await doneSessions(sessions.map((s) => s.id));
-    return { goal, plan, sessions, done };
-  }, [today]);
+    return { goals, goal, plan, sessions, done };
+  }, [today, selectedId]);
 
   const [tab, setTab] = useState<Tab | undefined>(undefined);
   if (!data) return null;
   const current: Tab = tab ?? (data.goal && data.plan ? 'today' : 'plan');
+  const choose = (id: string) => {
+    setSelectedId(id);
+    storeGoalId(id);
+    setAdding(false);
+  };
 
   return (
     <div className="pb-6">
@@ -75,6 +98,29 @@ export default function Endurance() {
         ))}
       </div>
 
+      {data.goals.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-1" role="group" aria-label="Ziel wählen" data-tour="goal-switch">
+          {data.goals.map((g) => {
+            const on = !adding && g.id === data.goal?.id;
+            return (
+              <button key={g.id} aria-pressed={on} onClick={() => choose(g.id)} className={`min-h-11 rounded-lg px-3 text-sm ${on ? 'bg-accent font-semibold text-white' : 'bg-surface text-neutral-300'}`}>
+                {GOAL_LABEL[g.type]} · {formatDay(g.targetDate)}
+              </button>
+            );
+          })}
+          <button
+            aria-pressed={adding}
+            onClick={() => {
+              setAdding(true);
+              setTab('plan');
+            }}
+            className={`min-h-11 rounded-lg px-3 text-sm ${adding ? 'bg-accent font-semibold text-white' : 'bg-surface text-neutral-300'}`}
+          >
+            + Ziel
+          </button>
+        </div>
+      )}
+
       {current === 'today' && (
         <>
           <EnduranceToday goal={data.goal} plan={data.plan} sessions={data.sessions} done={data.done} today={today} onOpenPlan={() => setTab('plan')} />
@@ -83,10 +129,12 @@ export default function Endurance() {
       )}
       {current === 'plan' && (
         <>
-          {data.goal && data.plan ? (
+          {adding ? (
+            <PlanWizard today={today} onCancel={() => setAdding(false)} onCreated={choose} />
+          ) : data.goal && data.plan ? (
             <PlanView goal={data.goal} plan={data.plan} sessions={data.sessions} done={data.done} today={today} />
           ) : (
-            <PlanWizard today={today} />
+            <PlanWizard today={today} onCreated={choose} />
           )}
           <ZonesSection />
         </>

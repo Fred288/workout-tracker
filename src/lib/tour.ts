@@ -101,7 +101,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'plan-wizard',
     route: '/endurance',
     title: 'Plan in vier Schritten',
-    text: 'Unter „Plan“ führt dich ein Assistent: 1. Wettkampf und Datum, 2. Erfahrung und aktueller Umfang, 3. deine Trainingstage und der lange Tag, 4. Vorschau mit Wochen, Phasen, Umfang und einer Beispielwoche. Erst „Plan erstellen“ speichert alles. Die Felder sind sinnvoll vorbelegt, Hinweise erklären jede Angabe. Später änderst du den Plan über „Plan neu erstellen“.',
+    text: 'Unter „Plan“ führt dich ein Assistent: 1. Wettkampf und Datum, 2. Erfahrung und aktueller Umfang, 3. deine Trainingstage und der lange Tag, 4. Vorschau mit Wochen, Phasen, Umfang und einer Beispielwoche. Erst „Plan erstellen“ speichert alles. Die Felder sind sinnvoll vorbelegt, Hinweise erklären jede Angabe. Später änderst du den Plan über „Plan neu erstellen“. Mehrere Ziele legst du über „+ Ziel“ an und wechselst oben zwischen ihnen, Heute und Auswertung folgen dem gewählten Ziel.',
   },
   {
     id: 'endurance-more',

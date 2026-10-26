@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Goal, PlannedSession } from '../db/types';
-import { buildWeeks, newPlan, planProgress, sessionStatus, sessionsOfWeek, weekIndexOf, workoutFromSession } from './plan';
+import { buildWeeks, pickGoal, newPlan, planProgress, sessionStatus, sessionsOfWeek, weekIndexOf, workoutFromSession } from './plan';
 
 const goal: Goal = { id: 'g', type: 'marathon', targetDate: '2027-04-11', priority: 'A', createdAt: 0 };
 const session = (over: Partial<PlannedSession> = {}): PlannedSession => ({
@@ -88,5 +88,23 @@ describe('planProgress', () => {
     expect(planProgress(plan, goal, '2026-10-20')).toBe(0);
     expect(planProgress(plan, goal, '2028-01-01')).toBe(1);
     expect(planProgress(plan, goal, '2026-12-01')).toBeGreaterThan(0);
+  });
+});
+
+describe('pickGoal', () => {
+  const goals = [
+    { id: 'old', targetDate: '2026-05-01' },
+    { id: 'late', targetDate: '2027-06-01' },
+    { id: 'soon', targetDate: '2026-12-01' },
+  ];
+  it('takes the chosen goal when it exists', () => {
+    expect(pickGoal(goals, '2026-10-26', 'late')?.id).toBe('late');
+    expect(pickGoal(goals, '2026-10-26', 'old')?.id).toBe('old');
+  });
+  it('falls back to the next upcoming goal, then to the latest', () => {
+    expect(pickGoal(goals, '2026-10-26')?.id).toBe('soon');
+    expect(pickGoal(goals, '2026-10-26', 'gone')?.id).toBe('soon');
+    expect(pickGoal(goals, '2028-01-01')?.id).toBe('late');
+    expect(pickGoal([], '2026-10-26')).toBeUndefined();
   });
 });

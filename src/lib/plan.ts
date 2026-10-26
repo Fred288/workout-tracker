@@ -94,3 +94,9 @@ export function planProgress(plan: Pick<Plan, 'startDate'>, goal: Pick<Goal, 'ta
   if (total <= 0) return 1;
   return Math.min(1, Math.max(0, daysBetween(plan.startDate, today) / total));
 }
+
+/** The goal shown in the endurance area: the chosen one if it still exists, else the next upcoming, else the latest. */
+export function pickGoal<G extends { id: string; targetDate: string }>(goals: G[], today: string, selectedId?: string | null): G | undefined {
+  const sorted = [...goals].sort((a, b) => a.targetDate.localeCompare(b.targetDate));
+  return sorted.find((g) => g.id === selectedId) ?? sorted.find((g) => g.targetDate >= today) ?? sorted.at(-1);
+}
